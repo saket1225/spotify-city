@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Globe, Search, Trophy, Share2, Users, Swords } from 'lucide-react';
 
 interface CityNavProps {
   onResetCamera: () => void;
@@ -12,12 +13,12 @@ interface CityNavProps {
 }
 
 const NAV_ITEMS = [
-  { id: 'home', icon: '🏠', label: 'Overview', action: 'onResetCamera' },
-  { id: 'find', icon: '🔍', label: 'My Building', action: 'onFindMyBuilding' },
-  { id: 'leaderboard', icon: '🏆', label: 'Leaderboard', action: 'onOpenLeaderboard' },
-  { id: 'share', icon: '📸', label: 'Share Card', action: 'onOpenShareCard' },
-  { id: 'invite', icon: '👥', label: 'Invite', action: 'onOpenInvite' },
-  { id: 'compare', icon: '⚔️', label: 'Compare', action: 'onOpenCompare' },
+  { id: 'home', icon: Globe, label: 'Overview', action: 'onResetCamera' },
+  { id: 'find', icon: Search, label: 'My Building', action: 'onFindMyBuilding' },
+  { id: 'leaderboard', icon: Trophy, label: 'Leaderboard', action: 'onOpenLeaderboard' },
+  { id: 'share', icon: Share2, label: 'Share Card', action: 'onOpenShareCard' },
+  { id: 'invite', icon: Users, label: 'Invite', action: 'onOpenInvite' },
+  { id: 'compare', icon: Swords, label: 'Compare', action: 'onOpenCompare' },
 ] as const;
 
 export default function CityNav(props: CityNavProps) {
@@ -55,9 +56,9 @@ export default function CityNav(props: CityNavProps) {
             onClick={actionMap[item.action]}
             onMouseEnter={() => setHovered(item.id)}
             onMouseLeave={() => setHovered(null)}
-            className="fab-button w-14 h-14 rounded-full glass glow-green flex items-center justify-center text-xl transition-all hover:scale-110 hover:glow-green-strong active:scale-95"
+            className="fab-button w-14 h-14 rounded-full glass glow-green flex items-center justify-center transition-all hover:scale-110 hover:glow-green-strong active:scale-95"
           >
-            {item.icon}
+            <item.icon size={20} color="#1DB954" />
           </button>
         </div>
       ))}

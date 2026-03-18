@@ -76,10 +76,11 @@ function TypewriterSubtitle() {
   );
 }
 
-function AnimatedCount({ count }: { count: number }) {
+function AnimatedCount({ count, active }: { count: number; active: boolean }) {
   const [display, setDisplay] = useState(0);
 
   useEffect(() => {
+    if (!active) return;
     let frame: number;
     const start = performance.now();
     const duration = 1500;
@@ -91,7 +92,7 @@ function AnimatedCount({ count }: { count: number }) {
     };
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [count]);
+  }, [count, active]);
 
   return <span>{display}</span>;
 }
@@ -107,6 +108,63 @@ function LoadingScreen() {
   );
 }
 
+function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
+  const [visible, setVisible] = useState(true);
+  const [fading, setFading] = useState(false);
+
+  const handleSignIn = () => {
+    setFading(true);
+    setTimeout(() => setVisible(false), 600);
+    onSignIn();
+  };
+
+  if (!visible) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-40 flex flex-col items-center justify-center transition-opacity duration-500 ${
+        fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      }`}
+      style={{ background: 'radial-gradient(ellipse at center, rgba(5,5,16,0.7) 0%, rgba(5,5,16,0.92) 70%)' }}
+    >
+      <div className="flex flex-col items-center gap-6 px-6 text-center">
+        {/* Title */}
+        <h1
+          className="font-pixel text-5xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
+          style={{
+            textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
+          }}
+        >
+          SPOTIFY CITY
+        </h1>
+
+        {/* Tagline */}
+        <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md">
+          See your music taste as a city skyline
+        </p>
+
+        {/* Sign in button */}
+        <button
+          onClick={handleSignIn}
+          className="mt-6 px-10 py-4 rounded-full text-base sm:text-lg font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
+          style={{
+            background: '#1DB954',
+            color: '#000',
+            boxShadow: '0 0 20px rgba(29,185,84,0.3)',
+          }}
+        >
+          Sign in with Spotify
+        </button>
+
+        {/* Credit */}
+        <p className="mt-10 text-gray-600 text-xs tracking-wider">
+          Built by <span className="text-gray-500">@codanium_</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,6 +173,7 @@ export default function Home() {
   const [shareCardBuilding, setShareCardBuilding] = useState<BuildingParams | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [heroVisible, setHeroVisible] = useState(true);
 
   const allBuildings = useMemo(() => getSampleBuildings(), []);
 
@@ -159,6 +218,11 @@ export default function Home() {
       {/* Loading Screen */}
       {loading && <LoadingScreen />}
 
+      {/* Hero Overlay - shown before sign in */}
+      {!loading && heroVisible && (
+        <HeroOverlay onSignIn={() => setHeroVisible(false)} />
+      )}
+
       {/* Header - glass bar */}
       <header className="fixed top-0 left-0 right-0 z-40 glass-strong">
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-full">
@@ -194,7 +258,7 @@ export default function Home() {
       <div className="fixed bottom-5 left-5 z-10">
         <div className="glass rounded-xl px-4 py-2 glow-green">
           <span className="text-sm font-semibold text-[#1DB954]">
-            <AnimatedCount count={buildings.length} />
+            <AnimatedCount count={buildings.length} active={!loading} />
           </span>
           <span className="text-xs text-gray-500 ml-2">buildings in the city</span>
         </div>
