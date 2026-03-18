@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -154,16 +154,43 @@ function AudioWavePlane() {
   );
 }
 
+function SmartOrbitControls() {
+  const controlsRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
+  const autoRotateRef = useRef(true);
+
+  const handleInteraction = useCallback(() => {
+    autoRotateRef.current = false;
+    if (controlsRef.current) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (controlsRef.current as any).autoRotate = false;
+    }
+  }, []);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enableDamping
+      dampingFactor={0.05}
+      minDistance={8}
+      maxDistance={65}
+      maxPolarAngle={Math.PI / 2.15}
+      autoRotate
+      autoRotateSpeed={0.3}
+      onStart={handleInteraction}
+    />
+  );
+}
+
 export default function City({ buildings, onBuildingClick }: CityProps) {
   return (
     <Canvas
-      camera={{ position: [30, 22, 30], fov: 45 }}
+      camera={{ position: [40, 30, 40], fov: 45 }}
       style={{ width: '100%', height: '100%' }}
       shadows
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
     >
       <color attach="background" args={['#050510']} />
-      <fog attach="fog" args={['#050510', 35, 90]} />
+      <fog attach="fog" args={['#050510', 40, 100]} />
 
       <ambientLight intensity={0.25} />
       <directionalLight
@@ -189,15 +216,7 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
         <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
       ))}
 
-      <OrbitControls
-        enableDamping
-        dampingFactor={0.05}
-        minDistance={8}
-        maxDistance={65}
-        maxPolarAngle={Math.PI / 2.15}
-        autoRotate
-        autoRotateSpeed={0.3}
-      />
+      <SmartOrbitControls />
 
       <EffectComposer>
         <Bloom

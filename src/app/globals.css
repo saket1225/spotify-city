@@ -200,6 +200,16 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* Loading dot pulse */
+@keyframes loadingPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.8); opacity: 1; box-shadow: 0 0 30px rgba(29, 185, 84, 0.6); }
+}
+
+.loading-dot {
+  animation: loadingPulse 1.4s ease-in-out infinite;
+}
+
 /* Canvas takes full space */
 canvas {
   display: block;

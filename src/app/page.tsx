@@ -17,7 +17,7 @@ import Footer from '@/components/Footer';
 const City = dynamic(() => import('@/components/City'), { ssr: false });
 
 function AnimatedTitle() {
-  const text = 'Spotify City';
+  const text = 'SPOTIFY CITY';
   const [revealed, setRevealed] = useState(0);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ function AnimatedTitle() {
   }, []);
 
   return (
-    <h1 className="text-2xl font-bold tracking-tight">
+    <h1 className="font-pixel text-xl sm:text-2xl font-bold tracking-widest whitespace-nowrap">
       {text.split('').map((char, i) => (
         <span
           key={i}
@@ -69,7 +69,7 @@ function TypewriterSubtitle() {
   }, []);
 
   return (
-    <p className="text-xs text-gray-500 h-4">
+    <p className="text-[10px] sm:text-xs text-gray-500 h-4 mt-1">
       {text.slice(0, chars)}
       {chars < text.length && <span className="inline-block w-[2px] h-3 bg-gray-500 ml-[1px] animate-pulse" />}
     </p>
@@ -96,6 +96,17 @@ function AnimatedCount({ count }: { count: number }) {
   return <span>{display}</span>;
 }
 
+function LoadingScreen() {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050510]">
+      <div className="flex flex-col items-center gap-6">
+        <div className="loading-dot w-4 h-4 rounded-full bg-[#1DB954]" />
+        <p className="font-pixel text-lg text-gray-400 tracking-wide">Building your city...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,6 +114,7 @@ export default function Home() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [shareCardBuilding, setShareCardBuilding] = useState<BuildingParams | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const allBuildings = useMemo(() => getSampleBuildings(), []);
 
@@ -136,31 +148,50 @@ export default function Home() {
     }
   };
 
+  // Hide loading after a delay for Three.js init
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2200);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050510]">
-      {/* Header */}
-      <header className="relative z-10 flex items-center justify-between px-6 py-4">
-        <div className="glass rounded-2xl px-5 py-3">
-          <AnimatedTitle />
-          <TypewriterSubtitle />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="glass rounded-xl">
+      {/* Loading Screen */}
+      {loading && <LoadingScreen />}
+
+      {/* Header - glass bar */}
+      <header className="fixed top-0 left-0 right-0 z-40 glass-strong">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-full">
+          {/* Left: Title + Subtitle */}
+          <div className="flex-shrink-0 min-w-0">
+            <AnimatedTitle />
+            <TypewriterSubtitle />
+          </div>
+
+          {/* Center: Search */}
+          <div className="hidden sm:block flex-1 max-w-sm mx-4">
             <SearchBar onSearch={setSearchQuery} />
           </div>
-          <div className="glass rounded-xl">
+
+          {/* Right: Login */}
+          <div className="flex-shrink-0">
             <LoginButton />
           </div>
         </div>
+
+        {/* Mobile search - below header on small screens */}
+        <div className="sm:hidden px-4 pb-3">
+          <SearchBar onSearch={setSearchQuery} />
+        </div>
       </header>
 
-      {/* 3D City */}
-      <main className="flex-1">
+      {/* 3D City - full viewport */}
+      <main className="fixed inset-0">
         <City buildings={buildings} onBuildingClick={handleBuildingClick} />
       </main>
 
       {/* Building count */}
-      <div className="absolute bottom-5 left-5 z-10">
+      <div className="fixed bottom-5 left-5 z-10">
         <div className="glass rounded-xl px-4 py-2 glow-green">
           <span className="text-sm font-semibold text-[#1DB954]">
             <AnimatedCount count={buildings.length} />
@@ -173,14 +204,12 @@ export default function Home() {
       <CityNav
         onResetCamera={() => {}}
         onFindMyBuilding={() => {
-          // Select first building as "yours" for demo
           if (allBuildings.length > 0) {
             setSelectedBuilding(allBuildings[0]);
           }
         }}
         onOpenLeaderboard={() => setLeaderboardOpen(true)}
         onOpenShareCard={() => {
-          // Use first building as demo user's building
           if (allBuildings.length > 0) {
             setShareCardBuilding(allBuildings[0]);
           }

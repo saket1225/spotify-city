@@ -33,7 +33,7 @@ export default function CityNav(props: CityNavProps) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-3">
+    <div className="fixed bottom-8 right-8 z-30 flex flex-col gap-4">
       {NAV_ITEMS.map((item, i) => (
         <div
           key={item.id}
@@ -45,7 +45,7 @@ export default function CityNav(props: CityNavProps) {
         >
           {/* Tooltip */}
           {hovered === item.id && (
-            <div className="absolute right-14 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg glass-strong px-3 py-1.5 text-xs text-gray-300 pointer-events-none animate-fade-in">
+            <div className="absolute right-16 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-lg glass-strong px-3 py-1.5 text-xs text-gray-300 pointer-events-none animate-fade-in">
               {item.label}
             </div>
           )}
@@ -55,7 +55,7 @@ export default function CityNav(props: CityNavProps) {
             onClick={actionMap[item.action]}
             onMouseEnter={() => setHovered(item.id)}
             onMouseLeave={() => setHovered(null)}
-            className="fab-button w-12 h-12 rounded-full glass glow-green flex items-center justify-center text-lg transition-all hover:scale-110 hover:glow-green-strong active:scale-95"
+            className="fab-button w-14 h-14 rounded-full glass glow-green flex items-center justify-center text-xl transition-all hover:scale-110 hover:glow-green-strong active:scale-95"
           >
             {item.icon}
           </button>

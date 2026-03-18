@@ -123,14 +123,21 @@ export function generateBuildingParams(
   const windowGlow = Math.min(1, profile.listeningStreak / 14);
   const style = getGenreStyle(profile.topGenres);
 
+  // City grid layout - proper spacing with streets/gaps
   const gridCols = 5;
-  const spacing = 9;
+  const spacing = 12; // wider spacing to prevent overlaps
+  const streetWidth = 2; // gap for "streets"
   const row = Math.floor(index / gridCols);
   const col = index % gridCols;
-  const offsetX = Math.sin(index * 7.3) * 1.0;
-  const offsetZ = Math.cos(index * 4.1) * 1.0;
-  const x = (col - gridCols / 2) * spacing + offsetX;
-  const z = (row - 2) * spacing + offsetZ;
+
+  // Seeded pseudo-random offsets (deterministic per building)
+  const seed1 = Math.sin(index * 7.3 + 0.5) * 0.5;
+  const seed2 = Math.cos(index * 4.1 + 0.5) * 0.5;
+  const offsetX = seed1 * 1.5;
+  const offsetZ = seed2 * 1.5;
+
+  const x = (col - gridCols / 2) * (spacing + streetWidth) + offsetX;
+  const z = (row - 2) * (spacing + streetWidth) + offsetZ;
 
   return {
     height,
