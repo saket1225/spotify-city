@@ -4,7 +4,9 @@ import type { BuildingParams } from '@/types';
 
 const sampleProfiles: SpotifyProfile[] = [
   {
-    id: 'sp1', displayName: 'Luna Waves', imageUrl: '', followers: 125000, totalPlaylists: 34,
+    id: 'sp1', displayName: 'Luna Waves', imageUrl: '',
+    estimatedListeningHours: 8200, totalTracksPlayed: 4500, avgTrackDuration: 4.2,
+    listeningStreak: 14, playlistDuration: 12000, totalPlaylists: 34,
     topGenres: ['electronic', 'house', 'techno'],
     topArtists: [
       { name: 'Disclosure', imageUrl: '', genres: ['electronic', 'house'] },
@@ -16,10 +18,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Innerbloom', artist: 'RÜFÜS DU SOL', albumArt: '' },
       { name: 'Kerala', artist: 'Bonobo', albumArt: '' },
     ],
-    recentlyPlayedCount: 28,
   },
   {
-    id: 'sp2', displayName: 'RockStar42', imageUrl: '', followers: 850, totalPlaylists: 12,
+    id: 'sp2', displayName: 'RockStar42', imageUrl: '',
+    estimatedListeningHours: 320, totalTracksPlayed: 800, avgTrackDuration: 4.8,
+    listeningStreak: 5, playlistDuration: 1800, totalPlaylists: 12,
     topGenres: ['rock', 'alternative', 'grunge'],
     topArtists: [
       { name: 'Foo Fighters', imageUrl: '', genres: ['rock', 'alternative rock'] },
@@ -31,10 +34,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'No One Knows', artist: 'Queens of the Stone Age', albumArt: '' },
       { name: 'Do I Wanna Know?', artist: 'Arctic Monkeys', albumArt: '' },
     ],
-    recentlyPlayedCount: 15,
   },
   {
-    id: 'sp3', displayName: 'JazzCat', imageUrl: '', followers: 3200, totalPlaylists: 45,
+    id: 'sp3', displayName: 'JazzCat', imageUrl: '',
+    estimatedListeningHours: 5600, totalTracksPlayed: 3200, avgTrackDuration: 6.5,
+    listeningStreak: 10, playlistDuration: 18000, totalPlaylists: 45,
     topGenres: ['jazz', 'soul', 'blues'],
     topArtists: [
       { name: 'Miles Davis', imageUrl: '', genres: ['jazz', 'bebop'] },
@@ -46,10 +50,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'A Love Supreme', artist: 'John Coltrane', albumArt: '' },
       { name: 'Truth', artist: 'Kamasi Washington', albumArt: '' },
     ],
-    recentlyPlayedCount: 8,
   },
   {
-    id: 'sp4', displayName: 'PopPrincess', imageUrl: '', followers: 5000000, totalPlaylists: 28,
+    id: 'sp4', displayName: 'PopPrincess', imageUrl: '',
+    estimatedListeningHours: 15000, totalTracksPlayed: 9500, avgTrackDuration: 3.2,
+    listeningStreak: 14, playlistDuration: 8500, totalPlaylists: 28,
     topGenres: ['pop', 'dance pop', 'synth pop'],
     topArtists: [
       { name: 'Dua Lipa', imageUrl: '', genres: ['pop', 'dance pop'] },
@@ -61,10 +66,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: '360', artist: 'Charli XCX', albumArt: '' },
       { name: 'good 4 u', artist: 'Olivia Rodrigo', albumArt: '' },
     ],
-    recentlyPlayedCount: 35,
   },
   {
-    id: 'sp5', displayName: 'HipHopHead', imageUrl: '', followers: 420, totalPlaylists: 8,
+    id: 'sp5', displayName: 'HipHopHead', imageUrl: '',
+    estimatedListeningHours: 2800, totalTracksPlayed: 2100, avgTrackDuration: 3.8,
+    listeningStreak: 12, playlistDuration: 3200, totalPlaylists: 8,
     topGenres: ['hip hop', 'rap', 'trap'],
     topArtists: [
       { name: 'Kendrick Lamar', imageUrl: '', genres: ['hip hop', 'rap'] },
@@ -76,10 +82,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'No Role Modelz', artist: 'J. Cole', albumArt: '' },
       { name: 'See You Again', artist: 'Tyler, The Creator', albumArt: '' },
     ],
-    recentlyPlayedCount: 22,
   },
   {
-    id: 'sp6', displayName: 'ClassicalNerd', imageUrl: '', followers: 15000, totalPlaylists: 60,
+    id: 'sp6', displayName: 'ClassicalNerd', imageUrl: '',
+    estimatedListeningHours: 9200, totalTracksPlayed: 2800, avgTrackDuration: 12.5,
+    listeningStreak: 7, playlistDuration: 24000, totalPlaylists: 60,
     topGenres: ['classical', 'orchestral', 'piano'],
     topArtists: [
       { name: 'Ludovico Einaudi', imageUrl: '', genres: ['classical', 'piano'] },
@@ -91,10 +98,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Cello Suite No. 1', artist: 'Yo-Yo Ma', albumArt: '' },
       { name: 'Partita No. 2', artist: 'Hilary Hahn', albumArt: '' },
     ],
-    recentlyPlayedCount: 5,
   },
   {
-    id: 'sp7', displayName: 'IndieSoul', imageUrl: '', followers: 200, totalPlaylists: 15,
+    id: 'sp7', displayName: 'IndieSoul', imageUrl: '',
+    estimatedListeningHours: 120, totalTracksPlayed: 350, avgTrackDuration: 4.1,
+    listeningStreak: 3, playlistDuration: 2200, totalPlaylists: 15,
     topGenres: ['indie', 'folk', 'singer-songwriter'],
     topArtists: [
       { name: 'Bon Iver', imageUrl: '', genres: ['indie folk', 'folk'] },
@@ -106,10 +114,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Motion Sickness', artist: 'Phoebe Bridgers', albumArt: '' },
       { name: 'Mykonos', artist: 'Fleet Foxes', albumArt: '' },
     ],
-    recentlyPlayedCount: 12,
   },
   {
-    id: 'sp8', displayName: 'MetalHead666', imageUrl: '', followers: 6500, totalPlaylists: 20,
+    id: 'sp8', displayName: 'MetalHead666', imageUrl: '',
+    estimatedListeningHours: 4100, totalTracksPlayed: 2600, avgTrackDuration: 5.8,
+    listeningStreak: 9, playlistDuration: 6000, totalPlaylists: 20,
     topGenres: ['metal', 'heavy metal', 'thrash metal'],
     topArtists: [
       { name: 'Metallica', imageUrl: '', genres: ['metal', 'thrash metal'] },
@@ -121,10 +130,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Silvera', artist: 'Gojira', albumArt: '' },
       { name: 'Schism', artist: 'Tool', albumArt: '' },
     ],
-    recentlyPlayedCount: 18,
   },
   {
-    id: 'sp9', displayName: 'LatinVibes', imageUrl: '', followers: 89000, totalPlaylists: 22,
+    id: 'sp9', displayName: 'LatinVibes', imageUrl: '',
+    estimatedListeningHours: 6800, totalTracksPlayed: 4200, avgTrackDuration: 3.5,
+    listeningStreak: 13, playlistDuration: 7500, totalPlaylists: 22,
     topGenres: ['latin', 'reggaeton', 'latin pop'],
     topArtists: [
       { name: 'Bad Bunny', imageUrl: '', genres: ['reggaeton', 'latin'] },
@@ -136,10 +146,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'MALAMENTE', artist: 'Rosalía', albumArt: '' },
       { name: 'BICHOTA', artist: 'Karol G', albumArt: '' },
     ],
-    recentlyPlayedCount: 30,
   },
   {
-    id: 'sp10', displayName: 'KpopStan', imageUrl: '', followers: 250000, totalPlaylists: 40,
+    id: 'sp10', displayName: 'KpopStan', imageUrl: '',
+    estimatedListeningHours: 11500, totalTracksPlayed: 7800, avgTrackDuration: 3.4,
+    listeningStreak: 14, playlistDuration: 9200, totalPlaylists: 40,
     topGenres: ['k-pop', 'korean pop', 'j-pop'],
     topArtists: [
       { name: 'BTS', imageUrl: '', genres: ['k-pop', 'korean pop'] },
@@ -151,10 +162,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Pink Venom', artist: 'BLACKPINK', albumArt: '' },
       { name: 'Ditto', artist: 'NewJeans', albumArt: '' },
     ],
-    recentlyPlayedCount: 42,
   },
   {
-    id: 'sp11', displayName: 'CountryRoads', imageUrl: '', followers: 1800, totalPlaylists: 10,
+    id: 'sp11', displayName: 'CountryRoads', imageUrl: '',
+    estimatedListeningHours: 450, totalTracksPlayed: 600, avgTrackDuration: 3.9,
+    listeningStreak: 4, playlistDuration: 2400, totalPlaylists: 10,
     topGenres: ['country', 'americana', 'bluegrass'],
     topArtists: [
       { name: 'Chris Stapleton', imageUrl: '', genres: ['country', 'americana'] },
@@ -166,10 +178,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Something in the Orange', artist: 'Zach Bryan', albumArt: '' },
       { name: 'Feathered Indians', artist: 'Tyler Childers', albumArt: '' },
     ],
-    recentlyPlayedCount: 9,
   },
   {
-    id: 'sp12', displayName: 'NeonDreamer', imageUrl: '', followers: 32000, totalPlaylists: 55,
+    id: 'sp12', displayName: 'NeonDreamer', imageUrl: '',
+    estimatedListeningHours: 7400, totalTracksPlayed: 5100, avgTrackDuration: 4.6,
+    listeningStreak: 11, playlistDuration: 15000, totalPlaylists: 55,
     topGenres: ['edm', 'future bass', 'dubstep'],
     topArtists: [
       { name: 'Flume', imageUrl: '', genres: ['edm', 'future bass'] },
@@ -181,10 +194,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'A Moment Apart', artist: 'ODESZA', albumArt: '' },
       { name: 'Shelter', artist: 'Porter Robinson', albumArt: '' },
     ],
-    recentlyPlayedCount: 25,
   },
   {
-    id: 'sp13', displayName: 'ReggaeKing', imageUrl: '', followers: 7700, totalPlaylists: 18,
+    id: 'sp13', displayName: 'ReggaeKing', imageUrl: '',
+    estimatedListeningHours: 1800, totalTracksPlayed: 1200, avgTrackDuration: 4.0,
+    listeningStreak: 6, playlistDuration: 4800, totalPlaylists: 18,
     topGenres: ['reggae', 'dancehall', 'ska'],
     topArtists: [
       { name: 'Bob Marley', imageUrl: '', genres: ['reggae'] },
@@ -196,10 +210,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Here Comes Trouble', artist: 'Chronixx', albumArt: '' },
       { name: 'Blood Money', artist: 'Protoje', albumArt: '' },
     ],
-    recentlyPlayedCount: 14,
   },
   {
-    id: 'sp14', displayName: 'PunkRocker', imageUrl: '', followers: 500, totalPlaylists: 6,
+    id: 'sp14', displayName: 'PunkRocker', imageUrl: '',
+    estimatedListeningHours: 180, totalTracksPlayed: 500, avgTrackDuration: 2.8,
+    listeningStreak: 8, playlistDuration: 1200, totalPlaylists: 6,
     topGenres: ['punk', 'punk rock', 'pop punk'],
     topArtists: [
       { name: 'Green Day', imageUrl: '', genres: ['punk rock', 'pop punk'] },
@@ -211,10 +226,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'DANNY NEDELKO', artist: 'IDLES', albumArt: '' },
       { name: 'MYSTERY', artist: 'Turnstile', albumArt: '' },
     ],
-    recentlyPlayedCount: 20,
   },
   {
-    id: 'sp15', displayName: 'RnBSmooth', imageUrl: '', followers: 18000, totalPlaylists: 30,
+    id: 'sp15', displayName: 'RnBSmooth', imageUrl: '',
+    estimatedListeningHours: 3400, totalTracksPlayed: 2400, avgTrackDuration: 3.6,
+    listeningStreak: 10, playlistDuration: 5400, totalPlaylists: 30,
     topGenres: ['r&b', 'neo soul', 'contemporary r&b'],
     topArtists: [
       { name: 'SZA', imageUrl: '', genres: ['r&b', 'neo soul'] },
@@ -226,10 +242,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Nights', artist: 'Frank Ocean', albumArt: '' },
       { name: 'Best Part', artist: 'Daniel Caesar', albumArt: '' },
     ],
-    recentlyPlayedCount: 17,
   },
   {
-    id: 'sp16', displayName: 'LoFiStudy', imageUrl: '', followers: 50, totalPlaylists: 3,
+    id: 'sp16', displayName: 'LoFiStudy', imageUrl: '',
+    estimatedListeningHours: 50, totalTracksPlayed: 180, avgTrackDuration: 2.5,
+    listeningStreak: 2, playlistDuration: 600, totalPlaylists: 3,
     topGenres: ['electronic', 'ambient', 'chillhop'],
     topArtists: [
       { name: 'Nujabes', imageUrl: '', genres: ['electronic', 'jazz hip hop'] },
@@ -241,11 +258,12 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Awake', artist: 'Tycho', albumArt: '' },
       { name: 'Monday Loop', artist: 'Tomppabeats', albumArt: '' },
     ],
-    recentlyPlayedCount: 40,
   },
   {
-    id: 'sp17', displayName: 'FunkMaster', imageUrl: '', followers: 45000, totalPlaylists: 200,
-    topGenres: ['soul', 'funk', 'disco'],
+    id: 'sp17', displayName: 'FunkMaster', imageUrl: '',
+    estimatedListeningHours: 4800, totalTracksPlayed: 3100, avgTrackDuration: 4.4,
+    listeningStreak: 11, playlistDuration: 32000, totalPlaylists: 200,
+    topGenres: ['soul', 'funk', 'disco', 'r&b', 'jazz'],
     topArtists: [
       { name: 'Vulfpeck', imageUrl: '', genres: ['funk', 'indie'] },
       { name: 'Thundercat', imageUrl: '', genres: ['funk', 'jazz'] },
@@ -256,10 +274,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Them Changes', artist: 'Thundercat', albumArt: '' },
       { name: 'Come Down', artist: 'Anderson .Paak', albumArt: '' },
     ],
-    recentlyPlayedCount: 24,
   },
   {
-    id: 'sp18', displayName: 'SynthWaver', imageUrl: '', followers: 12000, totalPlaylists: 25,
+    id: 'sp18', displayName: 'SynthWaver', imageUrl: '',
+    estimatedListeningHours: 2200, totalTracksPlayed: 1600, avgTrackDuration: 5.1,
+    listeningStreak: 8, playlistDuration: 5800, totalPlaylists: 25,
     topGenres: ['electronic', 'synthwave', 'retrowave'],
     topArtists: [
       { name: 'The Midnight', imageUrl: '', genres: ['synthwave', 'electronic'] },
@@ -271,10 +290,11 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Nightcall', artist: 'Kavinsky', albumArt: '' },
       { name: 'Memory', artist: 'Com Truise', albumArt: '' },
     ],
-    recentlyPlayedCount: 19,
   },
   {
-    id: 'sp19', displayName: 'BluesRunner', imageUrl: '', followers: 2400, totalPlaylists: 14,
+    id: 'sp19', displayName: 'BluesRunner', imageUrl: '',
+    estimatedListeningHours: 680, totalTracksPlayed: 900, avgTrackDuration: 5.2,
+    listeningStreak: 5, playlistDuration: 3200, totalPlaylists: 14,
     topGenres: ['blues', 'blues rock', 'delta blues'],
     topArtists: [
       { name: 'Gary Clark Jr.', imageUrl: '', genres: ['blues', 'blues rock'] },
@@ -286,11 +306,12 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Mountain Time', artist: 'Joe Bonamassa', albumArt: '' },
       { name: 'The Duffler', artist: 'Fantastic Negrito', albumArt: '' },
     ],
-    recentlyPlayedCount: 11,
   },
   {
-    id: 'sp20', displayName: 'AfroBeat77', imageUrl: '', followers: 780000, totalPlaylists: 35,
-    topGenres: ['pop', 'afrobeats', 'dancehall'],
+    id: 'sp20', displayName: 'AfroBeat77', imageUrl: '',
+    estimatedListeningHours: 10200, totalTracksPlayed: 6800, avgTrackDuration: 3.8,
+    listeningStreak: 14, playlistDuration: 9800, totalPlaylists: 35,
+    topGenres: ['pop', 'afrobeats', 'dancehall', 'r&b'],
     topArtists: [
       { name: 'Burna Boy', imageUrl: '', genres: ['afrobeats', 'pop'] },
       { name: 'Wizkid', imageUrl: '', genres: ['afrobeats', 'pop'] },
@@ -301,7 +322,6 @@ const sampleProfiles: SpotifyProfile[] = [
       { name: 'Essence', artist: 'Wizkid', albumArt: '' },
       { name: 'Free Mind', artist: 'Tems', albumArt: '' },
     ],
-    recentlyPlayedCount: 33,
   },
 ];
 

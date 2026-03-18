@@ -2,13 +2,18 @@ export interface SpotifyProfile {
   id: string;
   displayName: string;
   imageUrl: string;
-  followers: number;
+  estimatedListeningHours: number;
+  totalTracksPlayed: number;
+  avgTrackDuration: number; // minutes
+  listeningStreak: number; // days active recently
+  playlistDuration: number; // total mins across playlists
   totalPlaylists: number;
   topGenres: string[];
   topArtists: { name: string; imageUrl: string; genres: string[] }[];
   topTracks: { name: string; artist: string; albumArt: string }[];
-  recentlyPlayedCount: number;
 }
+
+export type BuildingStyle = 'skyscraper' | 'fortress' | 'neon-tower' | 'penthouse' | 'brownstone' | 'cathedral' | 'modern';
 
 export interface BuildingParams {
   height: number;
@@ -16,8 +21,9 @@ export interface BuildingParams {
   depth: number;
   primaryColor: string;
   secondaryColor: string;
+  accentColor: string;
   windowGlow: number;
-  style: 'modern' | 'classic' | 'neon' | 'minimal';
+  style: BuildingStyle;
   position: [number, number, number];
   profile: SpotifyProfile;
 }

@@ -32,12 +32,13 @@ export async function fetchTopTracks(accessToken: string) {
     artist: ((t.artists as { name: string }[])?.[0]?.name) ?? '',
     albumArt:
       (((t.album as { images: { url: string }[] })?.images)?.[0]?.url) ?? '',
+    durationMs: (t.duration_ms as number) ?? 0,
   }));
 }
 
 export async function fetchPlaylists(accessToken: string) {
   const data = await spotifyFetch('/me/playlists?limit=50', accessToken);
-  return { total: data.total as number };
+  return { total: data.total as number, items: data.items };
 }
 
 export async function fetchRecentlyPlayed(accessToken: string) {
@@ -45,19 +46,30 @@ export async function fetchRecentlyPlayed(accessToken: string) {
     '/me/player/recently-played?limit=50',
     accessToken
   );
+  const items = data.items as { played_at: string; track: { duration_ms: number } }[];
   const now = Date.now();
-  const dayAgo = now - 24 * 60 * 60 * 1000;
-  const recentCount = data.items.filter(
-    (item: { played_at: string }) =>
-      new Date(item.played_at).getTime() > dayAgo
-  ).length;
-  return recentCount;
+
+  // Count unique days with activity for streak
+  const activeDays = new Set(
+    items.map((item) => new Date(item.played_at).toDateString())
+  );
+
+  // Sum duration of recently played tracks
+  const totalDurationMs = items.reduce(
+    (sum, item) => sum + (item.track?.duration_ms ?? 0), 0
+  );
+
+  return {
+    count: items.length,
+    activeDays: activeDays.size,
+    totalDurationMs,
+  };
 }
 
 export async function fetchUserProfile(
   accessToken: string
 ): Promise<SpotifyProfile> {
-  const [me, artists, tracks, playlists, recentCount] = await Promise.all([
+  const [me, artists, tracks, playlists, recentData] = await Promise.all([
     spotifyFetch('/me', accessToken),
     fetchTopArtists(accessToken),
     fetchTopTracks(accessToken),
@@ -77,15 +89,36 @@ export async function fetchUserProfile(
     .slice(0, 5)
     .map(([genre]) => genre);
 
+  // Estimate listening time from recently played tracks
+  const avgTrackDurationMs = tracks.length > 0
+    ? tracks.reduce((sum: number, t: { durationMs: number }) => sum + t.durationMs, 0) / tracks.length
+    : 210000; // 3.5 min default
+  const avgTrackDuration = avgTrackDurationMs / 60000;
+
+  // Estimate total hours: extrapolate from recent activity
+  // 50 recently played tracks gives us a window; scale up
+  const recentHours = recentData.totalDurationMs / 3600000;
+  const estimatedListeningHours = Math.round(recentHours * 365); // rough yearly estimate
+
+  // Estimate total playlist duration
+  const playlistDuration = Math.round(playlists.total * avgTrackDuration * 15); // ~15 tracks per playlist avg
+
   return {
     id: me.id,
     displayName: me.display_name ?? me.id,
     imageUrl: me.images?.[0]?.url ?? '',
-    followers: me.followers?.total ?? 0,
+    estimatedListeningHours: Math.max(50, estimatedListeningHours),
+    totalTracksPlayed: recentData.count,
+    avgTrackDuration: Math.round(avgTrackDuration * 10) / 10,
+    listeningStreak: recentData.activeDays,
+    playlistDuration,
     totalPlaylists: playlists.total,
     topGenres,
     topArtists: artists.slice(0, 5),
-    topTracks: tracks.slice(0, 5),
-    recentlyPlayedCount: recentCount,
+    topTracks: tracks.slice(0, 5).map((t: { name: string; artist: string; albumArt: string }) => ({
+      name: t.name,
+      artist: t.artist,
+      albumArt: t.albumArt,
+    })),
   };
 }
