@@ -42,7 +42,7 @@ function seededRandom(seed: number) {
 export default function Building({ params, onClick }: BuildingProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
-  const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile } = params;
+  const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile, isCurrentUser } = params;
   const config = getStyleConfig(style);
 
   const glowRef = useRef(0);
@@ -420,6 +420,31 @@ export default function Building({ params, onClick }: BuildingProps) {
         <PulsingGlow color={primaryColor} width={width} depth={depth} seed={seed} />
       )}
 
+      {/* Current user beacon */}
+      {isCurrentUser && (
+        <>
+          <UserBeacon height={height} width={width} depth={depth} />
+          <Html position={[0, height + 4.5, 0]} center style={{ pointerEvents: 'none' }}>
+            <div style={{
+              background: 'rgba(29,185,84,0.15)',
+              backdropFilter: 'blur(8px)',
+              color: '#1DB954',
+              padding: '4px 12px',
+              borderRadius: '20px',
+              fontFamily: 'system-ui, sans-serif',
+              fontSize: '11px',
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              border: '1px solid rgba(29,185,84,0.5)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}>
+              Your Building
+            </div>
+          </Html>
+        </>
+      )}
+
       {/* Hover label */}
       {hovered && (
         <Html position={[0, height + 2, 0]} center style={{ pointerEvents: 'none' }}>
@@ -492,6 +517,42 @@ function WindowPane({ position, rotation, emissiveColor, baseIntensity, shouldBl
         opacity={0.9}
       />
     </mesh>
+  );
+}
+
+// Animated beacon for the current user's building
+function UserBeacon({ height, width, depth }: { height: number; width: number; depth: number }) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (ringRef.current) {
+      ringRef.current.rotation.y = t * 0.3;
+      ringRef.current.scale.setScalar(1 + Math.sin(t * 1.5) * 0.08);
+    }
+    if (lightRef.current) {
+      lightRef.current.intensity = 2 + Math.sin(t * 2) * 1;
+    }
+  });
+
+  const radius = Math.max(width, depth) * 0.9;
+
+  return (
+    <>
+      {/* Rotating ring at base */}
+      <mesh ref={ringRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[radius, radius + 0.15, 48]} />
+        <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={2} transparent opacity={0.7} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Vertical beam */}
+      <mesh position={[0, height / 2, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, height + 6, 8]} />
+        <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={1.5} transparent opacity={0.25} />
+      </mesh>
+      {/* Bright point light */}
+      <pointLight ref={lightRef} position={[0, height + 2, 0]} color="#1DB954" intensity={2} distance={25} />
+    </>
   );
 }
 

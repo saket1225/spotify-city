@@ -2,10 +2,22 @@ import { SpotifyProfile } from '@/types';
 
 const SPOTIFY_API = 'https://api.spotify.com/v1';
 
-async function spotifyFetch(endpoint: string, accessToken: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function spotifyFetch(endpoint: string, accessToken: string, retries = 1): Promise<any> {
   const res = await fetch(`${SPOTIFY_API}${endpoint}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+
+  if (res.status === 401) {
+    throw new Error('Spotify token expired — please sign in again');
+  }
+
+  if (res.status === 429 && retries > 0) {
+    const retryAfter = parseInt(res.headers.get('Retry-After') ?? '2', 10);
+    await new Promise((r) => setTimeout(r, retryAfter * 1000));
+    return spotifyFetch(endpoint, accessToken, retries - 1);
+  }
+
   if (!res.ok) throw new Error(`Spotify API error: ${res.status}`);
   return res.json();
 }

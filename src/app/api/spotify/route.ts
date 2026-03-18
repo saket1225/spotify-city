@@ -14,10 +14,9 @@ export async function GET() {
     const profile = await fetchUserProfile(session.accessToken);
     return NextResponse.json(profile);
   } catch (error) {
-    console.error("Spotify API error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch Spotify data" },
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Spotify API error:", message);
+    const status = message.includes('token expired') ? 401 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

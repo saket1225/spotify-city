@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useSession, signIn } from 'next-auth/react';
 import { getSampleBuildings } from '@/lib/sampleData';
-import { BuildingParams } from '@/types';
+import { generateBuildingParams } from '@/lib/buildingGenerator';
+import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import LoginButton from '@/components/LoginButton';
 import SearchBar from '@/components/SearchBar';
@@ -115,6 +117,7 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
   const handleSignIn = () => {
     setFading(true);
     setTimeout(() => setVisible(false), 600);
+    signIn('spotify');
     onSignIn();
   };
 
@@ -156,6 +159,14 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
           Sign in with Spotify
         </button>
 
+        {/* Explore without signing in */}
+        <button
+          onClick={() => { setFading(true); setTimeout(() => setVisible(false), 600); onSignIn(); }}
+          className="mt-2 text-gray-500 text-xs tracking-wider hover:text-gray-300 transition-colors"
+        >
+          or explore the demo city
+        </button>
+
         {/* Credit */}
         <p className="mt-10 text-gray-600 text-xs tracking-wider">
           Built by <span className="text-gray-500">@codanium_</span>
@@ -166,6 +177,7 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
 }
 
 export default function Home() {
+  const { data: session, status } = useSession();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
@@ -174,8 +186,36 @@ export default function Home() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(true);
+  const [userProfile, setUserProfile] = useState<SpotifyProfile | null>(null);
 
-  const allBuildings = useMemo(() => getSampleBuildings(), []);
+  // Fetch real Spotify data when signed in
+  useEffect(() => {
+    if (status !== 'authenticated' || !session?.accessToken) return;
+    let cancelled = false;
+    fetch('/api/spotify')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && !data.error) setUserProfile(data);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [status, session?.accessToken]);
+
+  const sampleBuildings = useMemo(() => getSampleBuildings(), []);
+
+  // Merge user building (index 0, marked as current user) with sample buildings
+  const allBuildings = useMemo(() => {
+    if (!userProfile) return sampleBuildings;
+    const userBuilding = {
+      ...generateBuildingParams(userProfile, 0),
+      isCurrentUser: true,
+    };
+    // Re-index sample buildings starting at 1 so positions don't overlap
+    const reindexed = sampleBuildings.map((b, i) => ({
+      ...generateBuildingParams(b.profile, i + 1),
+    }));
+    return [userBuilding, ...reindexed];
+  }, [userProfile, sampleBuildings]);
 
   const buildings = useMemo(() => {
     if (!searchQuery.trim()) return allBuildings;
@@ -212,6 +252,11 @@ export default function Home() {
     const timer = setTimeout(() => setLoading(false), 2200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Auto-dismiss hero when already authenticated
+  useEffect(() => {
+    if (status === 'authenticated') setHeroVisible(false);
+  }, [status]);
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050510]">
@@ -268,7 +313,10 @@ export default function Home() {
       <CityNav
         onResetCamera={() => {}}
         onFindMyBuilding={() => {
-          if (allBuildings.length > 0) {
+          const myBuilding = allBuildings.find((b) => b.isCurrentUser);
+          if (myBuilding) {
+            setSelectedBuilding(myBuilding);
+          } else if (allBuildings.length > 0) {
             setSelectedBuilding(allBuildings[0]);
           }
         }}
