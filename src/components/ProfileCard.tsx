@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SpotifyProfile } from '@/types';
+import { SpotifyProfile, BuildingParams } from '@/types';
+import BuildingBadges from './BuildingBadges';
 
 interface ProfileCardProps {
   profile: SpotifyProfile;
   onClose: () => void;
+  onShare?: () => void;
+  allBuildings?: BuildingParams[];
 }
 
 const GENRE_COLORS: Record<string, string> = {
@@ -46,7 +49,7 @@ function formatHours(h: number): string {
   return h.toString();
 }
 
-export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
+export default function ProfileCard({ profile, onClose, onShare, allBuildings }: ProfileCardProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -62,7 +65,7 @@ export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={handleClose}>
       <div className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`} />
       <div
-        className={`relative w-full max-w-md rounded-2xl glass-strong glow-green p-6 transition-all duration-300 ${
+        className={`relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl glass-strong glow-green p-6 transition-all duration-300 ${
           visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-8 opacity-0 scale-95'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -112,6 +115,11 @@ export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
           </div>
         </div>
 
+        {/* Badges */}
+        <div className="mb-5">
+          <BuildingBadges profile={profile} allBuildings={allBuildings} />
+        </div>
+
         {/* Genre tags */}
         <div className="mb-5">
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Genres</h3>
@@ -157,7 +165,7 @@ export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
         </div>
 
         {/* Top tracks */}
-        <div>
+        <div className="mb-5">
           <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Top Tracks</h3>
           <div className="space-y-2">
             {profile.topTracks.slice(0, 3).map((track, i) => (
@@ -173,6 +181,16 @@ export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
             ))}
           </div>
         </div>
+
+        {/* Share button */}
+        {onShare && (
+          <button
+            onClick={onShare}
+            className="w-full rounded-xl bg-[#1DB954] px-4 py-3 text-sm font-bold text-black transition-all hover:bg-[#1ed760]"
+          >
+            📸 Share Building Card
+          </button>
+        )}
       </div>
     </div>
   );

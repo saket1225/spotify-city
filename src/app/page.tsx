@@ -7,6 +7,12 @@ import { BuildingParams } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import LoginButton from '@/components/LoginButton';
 import SearchBar from '@/components/SearchBar';
+import ShareCard from '@/components/ShareCard';
+import Leaderboard from '@/components/Leaderboard';
+import CompareMode from '@/components/CompareMode';
+import InviteFriends from '@/components/InviteFriends';
+import CityNav from '@/components/CityNav';
+import Footer from '@/components/Footer';
 
 const City = dynamic(() => import('@/components/City'), { ssr: false });
 
@@ -93,6 +99,10 @@ function AnimatedCount({ count }: { count: number }) {
 export default function Home() {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [shareCardBuilding, setShareCardBuilding] = useState<BuildingParams | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const allBuildings = useMemo(() => getSampleBuildings(), []);
 
@@ -106,6 +116,25 @@ export default function Home() {
         b.profile.topArtists.some((a) => a.name.toLowerCase().includes(q))
     );
   }, [allBuildings, searchQuery]);
+
+  // Get rank for a building (by listening hours)
+  const getRank = (building: BuildingParams): number => {
+    const sorted = [...allBuildings].sort(
+      (a, b) => b.profile.estimatedListeningHours - a.profile.estimatedListeningHours
+    );
+    return sorted.findIndex(b => b.profile.id === building.profile.id) + 1;
+  };
+
+  const handleBuildingClick = (building: BuildingParams) => {
+    setSelectedBuilding(building);
+  };
+
+  const handleShareFromProfile = () => {
+    if (selectedBuilding) {
+      setShareCardBuilding(selectedBuilding);
+      setSelectedBuilding(null);
+    }
+  };
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050510]">
@@ -127,7 +156,7 @@ export default function Home() {
 
       {/* 3D City */}
       <main className="flex-1">
-        <City buildings={buildings} onBuildingClick={setSelectedBuilding} />
+        <City buildings={buildings} onBuildingClick={handleBuildingClick} />
       </main>
 
       {/* Building count */}
@@ -140,13 +169,71 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Floating Nav */}
+      <CityNav
+        onResetCamera={() => {}}
+        onFindMyBuilding={() => {
+          // Select first building as "yours" for demo
+          if (allBuildings.length > 0) {
+            setSelectedBuilding(allBuildings[0]);
+          }
+        }}
+        onOpenLeaderboard={() => setLeaderboardOpen(true)}
+        onOpenShareCard={() => {
+          // Use first building as demo user's building
+          if (allBuildings.length > 0) {
+            setShareCardBuilding(allBuildings[0]);
+          }
+        }}
+        onOpenInvite={() => setInviteOpen(true)}
+        onOpenCompare={() => setCompareOpen(true)}
+      />
+
+      {/* Footer */}
+      <Footer />
+
       {/* Profile Card Overlay */}
       {selectedBuilding && (
         <ProfileCard
           profile={selectedBuilding.profile}
           onClose={() => setSelectedBuilding(null)}
+          onShare={handleShareFromProfile}
+          allBuildings={allBuildings}
         />
       )}
+
+      {/* Share Card Modal */}
+      {shareCardBuilding && (
+        <ShareCard
+          profile={shareCardBuilding.profile}
+          rank={getRank(shareCardBuilding)}
+          onClose={() => setShareCardBuilding(null)}
+        />
+      )}
+
+      {/* Leaderboard */}
+      <Leaderboard
+        buildings={allBuildings}
+        isOpen={leaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
+        onBuildingClick={(b) => {
+          setLeaderboardOpen(false);
+          setSelectedBuilding(b);
+        }}
+      />
+
+      {/* Compare Mode */}
+      <CompareMode
+        buildings={allBuildings}
+        isOpen={compareOpen}
+        onClose={() => setCompareOpen(false)}
+      />
+
+      {/* Invite Friends */}
+      <InviteFriends
+        isOpen={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+      />
     </div>
   );
 }
