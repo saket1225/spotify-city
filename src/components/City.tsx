@@ -1,89 +1,64 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Stars } from "@react-three/drei";
-import Building from "./Building";
-import CityCamera from "./CityCamera";
-import ProfileCard from "./ProfileCard";
-import { BuildingParams } from "@/types";
-import { generateDemoBuildings } from "@/lib/buildingGenerator";
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Stars } from '@react-three/drei';
+import Building from './Building';
+import { BuildingParams } from '@/types';
 
-export default function City() {
-  const [selectedBuilding, setSelectedBuilding] =
-    useState<BuildingParams | null>(null);
+interface CityProps {
+  buildings: BuildingParams[];
+  onBuildingClick: (params: BuildingParams) => void;
+}
 
-  const buildings = useMemo(() => generateDemoBuildings(), []);
-
+function Ground() {
   return (
-    <div className="relative w-full h-full">
-      <Canvas
-        shadows
-        camera={{ position: [30, 25, 30], fov: 50 }}
-        style={{ background: "#0A0A0A" }}
-      >
-        {/* Sky */}
-        <Stars
-          radius={100}
-          depth={50}
-          count={3000}
-          factor={4}
-          saturation={0}
-          fade
-          speed={0.5}
-        />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <planeGeometry args={[200, 200]} />
+      <meshStandardMaterial color="#0d0d0d" />
+    </mesh>
+  );
+}
 
-        {/* Lighting */}
-        <ambientLight intensity={0.15} />
-        <directionalLight
-          position={[20, 30, 10]}
-          intensity={0.6}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          color="#b4c6ff"
-        />
-        <pointLight position={[0, 15, 0]} intensity={0.3} color="#1DB954" />
+function GridLines() {
+  return <gridHelper args={[200, 50, '#1a1a1a', '#141414']} position={[0, 0.01, 0]} />;
+}
 
-        {/* Ground */}
-        <mesh
-          rotation={[-Math.PI / 2, 0, 0]}
-          position={[0, -0.01, 0]}
-          receiveShadow
-        >
-          <planeGeometry args={[120, 120]} />
-          <meshStandardMaterial color="#0D0D0D" roughness={0.9} />
-        </mesh>
+export default function City({ buildings, onBuildingClick }: CityProps) {
+  return (
+    <Canvas
+      camera={{ position: [25, 20, 25], fov: 50 }}
+      style={{ width: '100%', height: '100%' }}
+      shadows
+    >
+      <color attach="background" args={['#080810']} />
+      <fog attach="fog" args={['#080810', 30, 80]} />
 
-        {/* Grid lines on ground */}
-        <gridHelper
-          args={[120, 60, "#1a1a1a", "#141414"]}
-          position={[0, 0, 0]}
-        />
+      <ambientLight intensity={0.3} />
+      <directionalLight
+        position={[15, 20, 10]}
+        intensity={0.8}
+        color="#fff5e6"
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+      <pointLight position={[0, 15, 0]} intensity={0.3} color="#1DB954" />
 
-        {/* Buildings */}
-        {buildings.map((params, i) => (
-          <Building
-            key={`building-${i}`}
-            params={params}
-            onClick={setSelectedBuilding}
-          />
-        ))}
+      <Stars radius={100} depth={50} count={2000} factor={4} fade speed={0.5} />
+      <Ground />
+      <GridLines />
 
-        {/* Camera controls */}
-        <CityCamera />
+      {buildings.map((b, i) => (
+        <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
+      ))}
 
-        {/* Fog for depth */}
-        <fog attach="fog" args={["#0A0A0A", 40, 100]} />
-      </Canvas>
-
-      {/* Profile overlay */}
-      {selectedBuilding && (
-        <ProfileCard
-          building={selectedBuilding}
-          onClose={() => setSelectedBuilding(null)}
-        />
-      )}
-    </div>
+      <OrbitControls
+        enableDamping
+        dampingFactor={0.05}
+        minDistance={10}
+        maxDistance={60}
+        maxPolarAngle={Math.PI / 2.2}
+      />
+    </Canvas>
   );
 }

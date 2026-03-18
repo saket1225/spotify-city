@@ -1,6 +1,6 @@
-import { SpotifyProfile } from "@/types";
+import { SpotifyProfile } from '@/types';
 
-const SPOTIFY_API = "https://api.spotify.com/v1";
+const SPOTIFY_API = 'https://api.spotify.com/v1';
 
 async function spotifyFetch(endpoint: string, accessToken: string) {
   const res = await fetch(`${SPOTIFY_API}${endpoint}`, {
@@ -12,37 +12,37 @@ async function spotifyFetch(endpoint: string, accessToken: string) {
 
 export async function fetchTopArtists(accessToken: string) {
   const data = await spotifyFetch(
-    "/me/top/artists?limit=20&time_range=medium_term",
+    '/me/top/artists?limit=20&time_range=medium_term',
     accessToken
   );
   return data.items.map((a: Record<string, unknown>) => ({
     name: a.name as string,
-    imageUrl: ((a.images as { url: string }[])?.[0]?.url) ?? "",
-    genres: a.genres as string[],
+    imageUrl: ((a.images as { url: string }[])?.[0]?.url) ?? '',
+    genres: (a.genres as string[]) ?? [],
   }));
 }
 
 export async function fetchTopTracks(accessToken: string) {
   const data = await spotifyFetch(
-    "/me/top/tracks?limit=20&time_range=medium_term",
+    '/me/top/tracks?limit=20&time_range=medium_term',
     accessToken
   );
   return data.items.map((t: Record<string, unknown>) => ({
     name: t.name as string,
-    artist: ((t.artists as { name: string }[])?.[0]?.name) ?? "",
+    artist: ((t.artists as { name: string }[])?.[0]?.name) ?? '',
     albumArt:
-      (((t.album as { images: { url: string }[] })?.images)?.[0]?.url) ?? "",
+      (((t.album as { images: { url: string }[] })?.images)?.[0]?.url) ?? '',
   }));
 }
 
 export async function fetchPlaylists(accessToken: string) {
-  const data = await spotifyFetch("/me/playlists?limit=50", accessToken);
+  const data = await spotifyFetch('/me/playlists?limit=50', accessToken);
   return { total: data.total as number };
 }
 
 export async function fetchRecentlyPlayed(accessToken: string) {
   const data = await spotifyFetch(
-    "/me/player/recently-played?limit=50",
+    '/me/player/recently-played?limit=50',
     accessToken
   );
   const now = Date.now();
@@ -58,7 +58,7 @@ export async function fetchUserProfile(
   accessToken: string
 ): Promise<SpotifyProfile> {
   const [me, artists, tracks, playlists, recentCount] = await Promise.all([
-    spotifyFetch("/me", accessToken),
+    spotifyFetch('/me', accessToken),
     fetchTopArtists(accessToken),
     fetchTopTracks(accessToken),
     fetchPlaylists(accessToken),
@@ -80,13 +80,12 @@ export async function fetchUserProfile(
   return {
     id: me.id,
     displayName: me.display_name ?? me.id,
-    imageUrl: me.images?.[0]?.url ?? "",
+    imageUrl: me.images?.[0]?.url ?? '',
     followers: me.followers?.total ?? 0,
     totalPlaylists: playlists.total,
     topGenres,
     topArtists: artists.slice(0, 5),
     topTracks: tracks.slice(0, 5),
-    recentlyPlayed: recentCount,
-    accountCreated: undefined,
+    recentlyPlayedCount: recentCount,
   };
 }

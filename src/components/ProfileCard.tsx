@@ -1,101 +1,97 @@
-"use client";
+'use client';
 
-import { BuildingParams } from "@/types";
+import { useEffect, useState } from 'react';
+import { SpotifyProfile } from '@/types';
 
 interface ProfileCardProps {
-  building: BuildingParams;
+  profile: SpotifyProfile;
   onClose: () => void;
 }
 
-export default function ProfileCard({ building, onClose }: ProfileCardProps) {
-  const { profile, style, color } = building;
+export default function ProfileCard({ profile, onClose }: ProfileCardProps) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 200);
+  };
+
+  const formatFollowers = (n: number) => {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+    return n.toString();
+  };
 
   return (
-    <div className="absolute top-4 right-4 w-80 bg-black/90 border border-zinc-800 rounded-lg p-5 backdrop-blur-sm z-50">
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-3 text-zinc-500 hover:text-white transition-colors text-lg"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={handleClose}>
+      <div className={`absolute inset-0 bg-black/60 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`} />
+      <div
+        className={`relative w-full max-w-md rounded-lg border border-[#1DB954]/30 bg-[#121212] p-6 shadow-2xl transition-all duration-200 ${
+          visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+        }`}
+        onClick={(e) => e.stopPropagation()}
       >
-        x
-      </button>
+        <button
+          onClick={handleClose}
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 hover:bg-white/10 hover:text-white"
+        >
+          ✕
+        </button>
 
-      <div className="flex items-center gap-3 mb-4">
-        {profile.imageUrl ? (
-          <img
-            src={profile.imageUrl}
-            alt={profile.displayName}
-            className="w-12 h-12 rounded-sm"
-            style={{ imageRendering: "pixelated" }}
-          />
-        ) : (
-          <div
-            className="w-12 h-12 rounded-sm flex items-center justify-center text-lg font-bold"
-            style={{ backgroundColor: color }}
-          >
-            {profile.displayName[0]}
+        <div className="mb-4 flex items-center gap-4">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#1DB954]/20">
+            <span className="font-pixel text-2xl text-[#1DB954]">
+              {profile.displayName.charAt(0).toUpperCase()}
+            </span>
           </div>
-        )}
-        <div>
-          <h3 className="text-white font-bold font-[family-name:var(--font-silkscreen)]">
-            {profile.displayName}
-          </h3>
-          <p className="text-zinc-500 text-xs">
-            {profile.followers.toLocaleString()} followers
-          </p>
+          <div>
+            <h2 className="font-pixel text-xl text-white">{profile.displayName}</h2>
+            <p className="text-sm text-gray-400">
+              {formatFollowers(profile.followers)} followers · {profile.totalPlaylists} playlists
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-zinc-900 rounded p-2">
-          <p className="text-zinc-500 text-xs">Playlists</p>
-          <p className="text-white font-bold">{profile.totalPlaylists}</p>
-        </div>
-        <div className="bg-zinc-900 rounded p-2">
-          <p className="text-zinc-500 text-xs">Recently Played</p>
-          <p className="text-white font-bold">{profile.recentlyPlayed}</p>
-        </div>
-        <div className="bg-zinc-900 rounded p-2">
-          <p className="text-zinc-500 text-xs">Style</p>
-          <p className="text-white font-bold capitalize">{style}</p>
-        </div>
-        <div className="bg-zinc-900 rounded p-2">
-          <p className="text-zinc-500 text-xs">Building Height</p>
-          <p className="text-white font-bold">{building.height.toFixed(1)}</p>
-        </div>
-      </div>
-
-      {profile.topGenres.length > 0 && (
-        <div className="mb-3">
-          <p className="text-zinc-500 text-xs mb-1">Top Genres</p>
-          <div className="flex flex-wrap gap-1">
-            {profile.topGenres.map((genre) => (
-              <span
-                key={genre}
-                className="text-xs px-2 py-0.5 rounded-sm"
-                style={{ backgroundColor: color + "33", color }}
-              >
+        <div className="mb-4">
+          <h3 className="font-pixel mb-2 text-xs text-[#1DB954]">TOP GENRES</h3>
+          <div className="flex flex-wrap gap-2">
+            {profile.topGenres.slice(0, 5).map((genre) => (
+              <span key={genre} className="rounded-full border border-[#1DB954]/30 bg-[#1DB954]/10 px-3 py-1 text-xs text-[#1DB954]">
                 {genre}
               </span>
             ))}
           </div>
         </div>
-      )}
 
-      {profile.topArtists.length > 0 && (
-        <div>
-          <p className="text-zinc-500 text-xs mb-1">Top Artists</p>
-          <div className="flex flex-wrap gap-1">
-            {profile.topArtists.map((artist) => (
-              <span
-                key={artist.name}
-                className="text-xs text-zinc-300 bg-zinc-800 px-2 py-0.5 rounded-sm"
-              >
-                {artist.name}
-              </span>
+        <div className="mb-4">
+          <h3 className="font-pixel mb-2 text-xs text-[#1DB954]">TOP ARTISTS</h3>
+          <div className="space-y-1.5">
+            {profile.topArtists.slice(0, 3).map((artist, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                <span className="text-[#1DB954]">{i + 1}.</span>
+                <span>{artist.name}</span>
+              </div>
             ))}
           </div>
         </div>
-      )}
+
+        <div>
+          <h3 className="font-pixel mb-2 text-xs text-[#1DB954]">TOP TRACKS</h3>
+          <div className="space-y-1.5">
+            {profile.topTracks.slice(0, 3).map((track, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                <span className="text-[#1DB954]">{i + 1}.</span>
+                <span className="text-gray-300">{track.name}</span>
+                <span className="text-gray-500">— {track.artist}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

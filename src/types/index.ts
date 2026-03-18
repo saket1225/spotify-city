@@ -5,19 +5,19 @@ export interface SpotifyProfile {
   followers: number;
   totalPlaylists: number;
   topGenres: string[];
-  topArtists: { name: string; imageUrl: string }[];
+  topArtists: { name: string; imageUrl: string; genres: string[] }[];
   topTracks: { name: string; artist: string; albumArt: string }[];
-  recentlyPlayed: number;
-  accountCreated?: string;
+  recentlyPlayedCount: number;
 }
 
 export interface BuildingParams {
   height: number;
   width: number;
   depth: number;
-  color: string;
+  primaryColor: string;
+  secondaryColor: string;
   windowGlow: number;
-  style: "modern" | "classic" | "neon" | "minimal";
+  style: 'modern' | 'classic' | 'neon' | 'minimal';
   position: [number, number, number];
   profile: SpotifyProfile;
 }

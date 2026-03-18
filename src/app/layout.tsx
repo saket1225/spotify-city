@@ -1,18 +1,20 @@
-import type { Metadata } from "next";
-import { Silkscreen } from "next/font/google";
-import Providers from "./providers";
-import "./globals.css";
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import Providers from './providers';
+import './globals.css';
 
-const silkscreen = Silkscreen({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-silkscreen",
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Spotify City",
-  description:
-    "Your Spotify profile as a building in a pixel art city",
+  title: 'Spotify City',
+  description: 'Your music. Your city. Your building.',
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
 };
 
 export default function RootLayout({
@@ -21,8 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${silkscreen.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-black text-white">
+    <html lang="en" className={`${inter.variable} h-full`}>
+      <head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="min-h-full bg-[#0a0a0a] font-sans text-white antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>

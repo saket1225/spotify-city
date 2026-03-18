@@ -1,13 +1,13 @@
-import NextAuth from "next-auth";
-import type { NextAuthOptions } from "next-auth";
+import NextAuth from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     accessToken?: string;
   }
 }
 
-declare module "next-auth/jwt" {
+declare module 'next-auth/jwt' {
   interface JWT {
     accessToken?: string;
     refreshToken?: string;
@@ -18,18 +18,18 @@ declare module "next-auth/jwt" {
 export const authOptions: NextAuthOptions = {
   providers: [
     {
-      id: "spotify",
-      name: "Spotify",
-      type: "oauth",
+      id: 'spotify',
+      name: 'Spotify',
+      type: 'oauth',
       authorization: {
-        url: "https://accounts.spotify.com/authorize",
+        url: 'https://accounts.spotify.com/authorize',
         params: {
           scope:
-            "user-read-private user-read-email user-top-read user-read-recently-played playlist-read-private",
+            'user-read-private user-read-email user-top-read user-read-recently-played playlist-read-private',
         },
       },
-      token: "https://accounts.spotify.com/api/token",
-      userinfo: "https://api.spotify.com/v1/me",
+      token: 'https://accounts.spotify.com/api/token',
+      userinfo: 'https://api.spotify.com/v1/me',
       clientId: process.env.SPOTIFY_CLIENT_ID,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
       profile(profile) {
@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/",
+    signIn: '/',
   },
 };
 
