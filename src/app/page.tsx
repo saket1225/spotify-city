@@ -255,12 +255,12 @@ export default function Home() {
       </main>
 
       {/* Building count */}
-      <div className="fixed bottom-5 left-5 z-10">
-        <div className="glass rounded-xl px-4 py-2 glow-green">
-          <span className="text-sm font-semibold text-[#1DB954]">
+      <div className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-10">
+        <div className="glass rounded-lg sm:rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 glow-green">
+          <span className="text-xs sm:text-sm font-semibold text-[#1DB954]">
             <AnimatedCount count={buildings.length} active={!loading} />
           </span>
-          <span className="text-xs text-gray-500 ml-2">buildings in the city</span>
+          <span className="text-[10px] sm:text-xs text-gray-500 ml-1 sm:ml-2">buildings in the city</span>
         </div>
       </div>
 

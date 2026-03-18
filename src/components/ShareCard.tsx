@@ -9,21 +9,41 @@ interface ShareCardProps {
   rank?: number;
 }
 
-const GENRE_COLORS: Record<string, string> = {
-  pop: '#FF69B4', rock: '#DC143C', 'hip hop': '#FFD700', rap: '#FFD700',
-  electronic: '#00FFFF', edm: '#00FFFF', 'r&b': '#9370DB', soul: '#9370DB',
-  jazz: '#CD853F', classical: '#F5F5DC', indie: '#98FB98', metal: '#2F4F4F',
-  country: '#DEB887', latin: '#FF6347', reggae: '#00FF00', 'k-pop': '#FF69B4',
-  punk: '#FF4444', blues: '#4169E1', folk: '#A0522D', afrobeats: '#FF8C00',
-  funk: '#FF00FF', synthwave: '#8B00FF',
+const GENRE_GRADIENTS: Record<string, [string, string, string]> = {
+  pop: ['#FF69B4', '#FF1493', '#C71585'],
+  rock: ['#DC143C', '#8B0000', '#4A0000'],
+  'hip hop': ['#FFD700', '#FF8C00', '#B8860B'],
+  rap: ['#FFD700', '#FF6B00', '#CC5500'],
+  electronic: ['#00FFFF', '#0080FF', '#0040A0'],
+  edm: ['#00FFFF', '#6600FF', '#3300AA'],
+  'r&b': ['#9370DB', '#6A0DAD', '#4B0082'],
+  soul: ['#9370DB', '#8B008B', '#4B0082'],
+  jazz: ['#CD853F', '#8B6914', '#5C4033'],
+  classical: ['#F5F5DC', '#C4A35A', '#8B7355'],
+  indie: ['#98FB98', '#2E8B57', '#006400'],
+  metal: ['#708090', '#2F4F4F', '#1A1A2E'],
+  country: ['#DEB887', '#D2691E', '#8B4513'],
+  latin: ['#FF6347', '#FF4500', '#CC3700'],
+  reggae: ['#00FF00', '#228B22', '#006400'],
+  'k-pop': ['#FF69B4', '#DA70D6', '#BA55D3'],
+  punk: ['#FF4444', '#CC0000', '#8B0000'],
+  blues: ['#4169E1', '#1E3A8A', '#0F1E4A'],
+  folk: ['#A0522D', '#8B4513', '#5C3317'],
+  afrobeats: ['#FF8C00', '#FF4500', '#CC2200'],
+  funk: ['#FF00FF', '#CC00CC', '#800080'],
+  synthwave: ['#8B00FF', '#FF006E', '#6600AA'],
 };
 
-function getGenreColor(genre: string): string {
+function getGenreGradient(genre: string): [string, string, string] {
   const lower = genre.toLowerCase();
-  for (const [key, color] of Object.entries(GENRE_COLORS)) {
-    if (lower.includes(key)) return color;
+  for (const [key, colors] of Object.entries(GENRE_GRADIENTS)) {
+    if (lower.includes(key)) return colors;
   }
-  return '#1DB954';
+  return ['#1DB954', '#15803d', '#064e3b'];
+}
+
+function getGenreColor(genre: string): string {
+  return getGenreGradient(genre)[0];
 }
 
 function formatHours(h: number): string {
@@ -31,173 +51,308 @@ function formatHours(h: number): string {
   return h.toString();
 }
 
-// Building icon SVG as a simple geometric shape
-function BuildingIcon({ color, style }: { color: string; style: string }) {
-  const heights = style === 'skyscraper' ? [40, 70, 55] :
-    style === 'fortress' ? [50, 50, 50] :
-    style === 'neon-tower' ? [35, 65, 45] :
-    [45, 60, 50];
+// QR code placeholder - simple geometric pattern
+function QRPlaceholder({ size = 56 }: { size?: number }) {
+  const s = size;
+  const cell = s / 7;
+  // Simplified QR-like pattern
+  const pattern = [
+    [1,1,1,0,1,1,1],
+    [1,0,1,0,1,0,1],
+    [1,1,1,0,1,1,1],
+    [0,0,0,1,0,0,0],
+    [1,1,1,0,1,1,1],
+    [1,0,1,0,1,0,1],
+    [1,1,1,0,1,1,1],
+  ];
 
   return (
-    <svg width="120" height="100" viewBox="0 0 120 100">
-      <rect x="15" y={100 - heights[0]} width="25" height={heights[0]} fill={color} opacity={0.6} rx="2" />
-      <rect x="47" y={100 - heights[1]} width="26" height={heights[1]} fill={color} rx="2" />
-      <rect x="80" y={100 - heights[2]} width="25" height={heights[2]} fill={color} opacity={0.7} rx="2" />
-      {/* Windows */}
-      {[0, 1, 2].map(col => {
-        const x = col === 0 ? 20 : col === 1 ? 53 : 86;
-        const h = heights[col];
-        return Array.from({ length: Math.floor(h / 12) }, (_, row) => (
-          <rect
-            key={`${col}-${row}`}
-            x={x + 2}
-            y={100 - h + 6 + row * 12}
-            width="5"
-            height="4"
-            fill="#1DB954"
-            opacity={0.4 + Math.random() * 0.6}
-            rx="0.5"
-          />
-        ));
-      })}
-      {/* Antenna on tallest */}
-      <line x1="60" y1={100 - heights[1]} x2="60" y2={100 - heights[1] - 12} stroke={color} strokeWidth="2" />
-      <circle cx="60" cy={100 - heights[1] - 14} r="2" fill="#1DB954" />
+    <svg width={s} height={s} viewBox={`0 0 ${s} ${s}`}>
+      {pattern.map((row, y) =>
+        row.map((filled, x) =>
+          filled ? (
+            <rect
+              key={`${x}-${y}`}
+              x={x * cell}
+              y={y * cell}
+              width={cell}
+              height={cell}
+              fill="white"
+              opacity={0.9}
+            />
+          ) : null
+        )
+      )}
     </svg>
   );
 }
 
 function CardContent({
-  profile, rank, format, color,
+  profile, rank, format,
 }: {
-  profile: SpotifyProfile; rank?: number; format: 'portrait' | 'landscape'; color: string;
+  profile: SpotifyProfile; rank?: number; format: 'portrait' | 'landscape';
 }) {
   const isPortrait = format === 'portrait';
+  const [g1, g2, g3] = getGenreGradient(profile.topGenres[0] || '');
+  const topArtistImage = profile.topArtists[0]?.imageUrl;
+  const topAlbumArt = profile.topTracks[0]?.albumArt;
+  const bgImage = topArtistImage || topAlbumArt;
 
   return (
     <div
       style={{
         width: isPortrait ? 540 : 800,
         height: isPortrait ? 960 : 420,
-        background: 'linear-gradient(145deg, #0a0a0a 0%, #111118 50%, #0a0a0a 100%)',
-        padding: isPortrait ? 40 : 32,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
         position: 'relative',
         overflow: 'hidden',
         fontFamily: 'system-ui, -apple-system, sans-serif',
       }}
     >
-      {/* Glow orb */}
+      {/* Background: blurred artist/album image */}
+      {bgImage && (
+        <div style={{
+          position: 'absolute',
+          inset: -40,
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(40px) saturate(1.4)',
+          opacity: 0.35,
+        }} />
+      )}
+
+      {/* Gradient overlay */}
       <div style={{
         position: 'absolute',
-        top: isPortrait ? '15%' : '20%',
-        right: isPortrait ? '-10%' : '-5%',
-        width: 300, height: 300,
-        background: `radial-gradient(circle, ${color}20 0%, transparent 70%)`,
-        borderRadius: '50%',
+        inset: 0,
+        background: isPortrait
+          ? `linear-gradient(160deg, ${g1}E6 0%, ${g2}CC 35%, ${g3}F2 65%, #0a0a0aF5 100%)`
+          : `linear-gradient(135deg, ${g1}E6 0%, ${g2}CC 40%, ${g3}F2 70%, #0a0a0aF0 100%)`,
       }} />
 
-      {/* Top: name + rank */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: 16,
-            background: `${color}20`, border: `2px solid ${color}40`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, fontWeight: 700, color,
-          }}>
-            {profile.displayName.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#fff' }}>
-              {profile.displayName}
-            </div>
-            {rank && (
-              <div style={{ fontSize: 14, color: '#888', marginTop: 2 }}>
-                Rank #{rank} in the city
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Middle: stats + building */}
+      {/* Noise texture overlay */}
       <div style={{
-        position: 'relative', zIndex: 1,
+        position: 'absolute',
+        inset: 0,
+        opacity: 0.04,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+      }} />
+
+      {/* Content */}
+      <div style={{
+        position: 'relative',
+        zIndex: 1,
+        height: '100%',
+        padding: isPortrait ? '40px 36px' : '28px 36px',
         display: 'flex',
-        flexDirection: isPortrait ? 'column' : 'row',
-        alignItems: isPortrait ? 'flex-start' : 'center',
-        gap: isPortrait ? 24 : 40,
-        flex: 1,
-        justifyContent: 'center',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {/* Hours - big number */}
+        {/* Top section: Spotify City branding */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <div style={{
-              fontSize: isPortrait ? 72 : 56, fontWeight: 800, color: '#1DB954',
-              lineHeight: 1, letterSpacing: '-2px',
-              textShadow: '0 0 40px rgba(29,185,84,0.3)',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: 4,
+              textTransform: 'uppercase' as const,
+              color: 'rgba(255,255,255,0.7)',
+              marginBottom: 4,
+            }}>
+              Spotify City
+            </div>
+            <div style={{
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.4)',
+              letterSpacing: 1,
+            }}>
+              Your music, visualized
+            </div>
+          </div>
+          {rank && (
+            <div style={{
+              background: 'rgba(0,0,0,0.4)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 12,
+              padding: '6px 14px',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>#{rank}</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginLeft: 4 }}>in city</span>
+            </div>
+          )}
+        </div>
+
+        {/* Hero section: Name + big listening hours */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: isPortrait ? 'column' : 'row',
+          justifyContent: isPortrait ? 'center' : 'center',
+          alignItems: isPortrait ? 'flex-start' : 'center',
+          gap: isPortrait ? 20 : 40,
+        }}>
+          <div>
+            {/* Display name */}
+            <div style={{
+              fontSize: isPortrait ? 36 : 28,
+              fontWeight: 800,
+              color: '#fff',
+              lineHeight: 1.1,
+              marginBottom: isPortrait ? 24 : 16,
+              textShadow: '0 2px 20px rgba(0,0,0,0.3)',
+            }}>
+              {profile.displayName}
+            </div>
+
+            {/* Big listening hours number */}
+            <div style={{
+              fontSize: isPortrait ? 96 : 72,
+              fontWeight: 900,
+              color: '#fff',
+              lineHeight: 0.85,
+              letterSpacing: '-4px',
+              textShadow: '0 4px 30px rgba(0,0,0,0.3)',
             }}>
               {formatHours(profile.estimatedListeningHours)}
             </div>
-            <div style={{ fontSize: 14, color: '#666', textTransform: 'uppercase', letterSpacing: 3, marginTop: 4 }}>
+            <div style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: 'rgba(255,255,255,0.6)',
+              textTransform: 'uppercase' as const,
+              letterSpacing: 4,
+              marginTop: 8,
+            }}>
               listening hours
             </div>
           </div>
 
-          {/* Genre */}
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-            {profile.topGenres.slice(0, 3).map(genre => (
-              <span key={genre} style={{
-                padding: '4px 12px', borderRadius: 20,
-                background: `${getGenreColor(genre)}15`,
-                color: getGenreColor(genre),
-                border: `1px solid ${getGenreColor(genre)}30`,
-                fontSize: 12, fontWeight: 500,
+          {/* Right side stats (portrait: below, landscape: right) */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: isPortrait ? 16 : 12,
+          }}>
+            {/* Top artist */}
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              backdropFilter: 'blur(10px)',
+              borderRadius: 16,
+              padding: isPortrait ? '16px 20px' : '12px 16px',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,0.4)',
+                textTransform: 'uppercase' as const,
+                letterSpacing: 2,
+                marginBottom: 6,
               }}>
-                {genre}
-              </span>
-            ))}
-          </div>
-
-          {/* Top 3 artists */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {profile.topArtists.slice(0, 3).map((artist, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, color: '#1DB954',
-                  width: 16, textAlign: 'center' as const,
-                }}>
-                  {i + 1}
-                </span>
-                <span style={{ fontSize: 14, color: '#ccc' }}>{artist.name}</span>
+                Top Artist
               </div>
-            ))}
+              <div style={{ fontSize: isPortrait ? 20 : 16, fontWeight: 700, color: '#fff' }}>
+                {profile.topArtists[0]?.name || 'Unknown'}
+              </div>
+            </div>
+
+            {/* Genre tags */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+              {profile.topGenres.slice(0, 3).map(genre => (
+                <span key={genre} style={{
+                  padding: '6px 14px',
+                  borderRadius: 20,
+                  background: 'rgba(255,255,255,0.12)',
+                  backdropFilter: 'blur(10px)',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                  {genre}
+                </span>
+              ))}
+            </div>
+
+            {/* Mini stats row */}
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: isPortrait ? 22 : 18, fontWeight: 800, color: '#fff' }}>
+                  {profile.totalTracksPlayed.toLocaleString()}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' as const, letterSpacing: 1 }}>
+                  tracks
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: isPortrait ? 22 : 18, fontWeight: 800, color: '#fff' }}>
+                  {profile.listeningStreak}d
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' as const, letterSpacing: 1 }}>
+                  streak
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: isPortrait ? 22 : 18, fontWeight: 800, color: '#fff' }}>
+                  {profile.topGenres.length}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' as const, letterSpacing: 1 }}>
+                  genres
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Building icon */}
-        <div style={{ opacity: 0.8, flexShrink: 0 }}>
-          <BuildingIcon color={color} style={profile.topGenres[0] || 'modern'} />
-        </div>
-      </div>
-
-      {/* Bottom: watermark */}
-      <div style={{
-        position: 'relative', zIndex: 1,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <div style={{ fontSize: 12, color: '#444' }}>
-          spotifycity.app | built by @codanium_
-        </div>
+        {/* Bottom: watermark + QR */}
         <div style={{
-          fontSize: 14, fontWeight: 600, color: '#1DB954',
-          display: 'flex', alignItems: 'center', gap: 6,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
         }}>
-          <span style={{ fontSize: 18 }}>🏙️</span> Spotify City
+          <div>
+            <div style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.8)',
+              letterSpacing: 1,
+            }}>
+              spotifycity.app
+            </div>
+            <div style={{
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.35)',
+              marginTop: 2,
+            }}>
+              Built by @codanium_
+            </div>
+          </div>
+
+          {/* QR code area */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: 10,
+              padding: 6,
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <QRPlaceholder size={isPortrait ? 56 : 44} />
+            </div>
+            <div style={{
+              fontSize: 8,
+              color: 'rgba(255,255,255,0.35)',
+              textAlign: 'center' as const,
+              letterSpacing: 0.5,
+            }}>
+              Scan to build yours
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -209,8 +364,6 @@ export default function ShareCard({ profile, onClose, rank }: ShareCardProps) {
   const landscapeRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [format, setFormat] = useState<'portrait' | 'landscape'>('portrait');
-
-  const primaryColor = getGenreColor(profile.topGenres[0] || '');
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -235,60 +388,63 @@ export default function ShareCard({ profile, onClose, rank }: ShareCardProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" />
       <div
-        className="relative z-10 flex flex-col items-center gap-4 animate-slide-up"
+        className="relative z-10 flex flex-col items-center gap-3 sm:gap-4 animate-slide-up max-w-full"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Format toggle */}
         <div className="flex gap-2">
           <button
             onClick={() => setFormat('portrait')}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            className={`rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition-all ${
               format === 'portrait'
                 ? 'bg-[#1DB954] text-black'
                 : 'glass text-gray-400 hover:text-white'
             }`}
           >
-            📱 Stories
+            Stories
           </button>
           <button
             onClick={() => setFormat('landscape')}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            className={`rounded-lg px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium transition-all ${
               format === 'landscape'
                 ? 'bg-[#1DB954] text-black'
                 : 'glass text-gray-400 hover:text-white'
             }`}
           >
-            🐦 Twitter
+            Twitter
           </button>
         </div>
 
         {/* Card preview */}
-        <div className="rounded-2xl overflow-hidden glow-green-strong" style={{ maxWidth: '90vw', maxHeight: '60vh', overflow: 'auto' }}>
-          <div style={{ transform: 'scale(0.7)', transformOrigin: 'top center' }}>
+        <div className="rounded-2xl overflow-hidden glow-green-strong" style={{ maxWidth: '92vw', maxHeight: '62vh', overflow: 'auto' }}>
+          <div style={{
+            transform: `scale(${format === 'portrait' ? 0.55 : 0.6})`,
+            transformOrigin: 'top center',
+          }}>
             <div ref={portraitRef} style={{ display: format === 'portrait' ? 'block' : 'none' }}>
-              <CardContent profile={profile} rank={rank} format="portrait" color={primaryColor} />
+              <CardContent profile={profile} rank={rank} format="portrait" />
             </div>
             <div ref={landscapeRef} style={{ display: format === 'landscape' ? 'block' : 'none' }}>
-              <CardContent profile={profile} rank={rank} format="landscape" color={primaryColor} />
+              <CardContent profile={profile} rank={rank} format="landscape" />
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="rounded-xl bg-[#1DB954] px-6 py-3 text-sm font-bold text-black transition-all hover:bg-[#1ed760] disabled:opacity-50"
+            className="rounded-xl bg-[#1DB954] px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-bold text-black transition-all hover:bg-[#1ed760] disabled:opacity-50"
           >
-            {downloading ? 'Downloading...' : '⬇ Download Card'}
+            {downloading ? 'Saving...' : 'Download'}
           </button>
           <button
             onClick={onClose}
-            className="rounded-xl glass px-6 py-3 text-sm font-medium text-gray-400 hover:text-white transition-all"
+            className="rounded-xl glass px-4 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm font-medium text-gray-400 hover:text-white transition-all"
           >
             Close
           </button>

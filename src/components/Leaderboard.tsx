@@ -70,7 +70,7 @@ export default function Leaderboard({ buildings, isOpen, onClose, currentUserId,
     <div className="fixed inset-0 z-40" onClick={onClose}>
       <div className="absolute inset-0 bg-black/40" />
       <div
-        className="absolute right-0 top-0 h-full w-full max-w-md slide-in-right"
+        className="absolute right-0 top-0 h-full w-full sm:max-w-md slide-in-right"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="h-full glass-strong flex flex-col" style={{

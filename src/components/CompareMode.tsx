@@ -50,8 +50,8 @@ function CompareBar({ label, leftValue, rightValue, leftLabel, rightLabel }: Com
       <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-2 text-center">{label}</div>
       <div className="flex items-center gap-3">
         {/* Left stat */}
-        <div className="w-20 text-right">
-          <span className={`text-sm font-bold ${leftWins ? 'text-[#1DB954] text-glow-green' : 'text-gray-400'}`}>
+        <div className="w-14 sm:w-20 text-right">
+          <span className={`text-xs sm:text-sm font-bold ${leftWins ? 'text-[#1DB954] text-glow-green' : 'text-gray-400'}`}>
             {leftLabel}
           </span>
         </div>
@@ -59,7 +59,7 @@ function CompareBar({ label, leftValue, rightValue, leftLabel, rightLabel }: Com
         <div className="flex-1 flex gap-1">
           <div className="flex-1 flex justify-end">
             <div
-              className="h-6 rounded-l-md transition-all duration-700"
+              className="h-5 sm:h-6 rounded-l-md transition-all duration-700"
               style={{
                 width: `${leftPct}%`,
                 background: leftWins
@@ -70,7 +70,7 @@ function CompareBar({ label, leftValue, rightValue, leftLabel, rightLabel }: Com
           </div>
           <div className="flex-1">
             <div
-              className="h-6 rounded-r-md transition-all duration-700"
+              className="h-5 sm:h-6 rounded-r-md transition-all duration-700"
               style={{
                 width: `${rightPct}%`,
                 background: rightWins
@@ -81,8 +81,8 @@ function CompareBar({ label, leftValue, rightValue, leftLabel, rightLabel }: Com
           </div>
         </div>
         {/* Right stat */}
-        <div className="w-20">
-          <span className={`text-sm font-bold ${rightWins ? 'text-[#1DB954] text-glow-green' : 'text-gray-400'}`}>
+        <div className="w-14 sm:w-20">
+          <span className={`text-xs sm:text-sm font-bold ${rightWins ? 'text-[#1DB954] text-glow-green' : 'text-gray-400'}`}>
             {rightLabel}
           </span>
         </div>
@@ -228,7 +228,7 @@ export default function CompareMode({ buildings, isOpen, onClose }: CompareModeP
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" />
       <div
-        className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl glass-strong glow-green p-6 animate-slide-up"
+        className="relative z-10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl glass-strong glow-green p-4 sm:p-6 animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -245,7 +245,7 @@ export default function CompareMode({ buildings, isOpen, onClose }: CompareModeP
 
         <div ref={compareRef} style={{ background: '#0a0a0a', padding: 24, borderRadius: 16 }}>
           {/* Player selection */}
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
             <PlayerSelect buildings={buildings} selected={left} onSelect={setLeft} side="left" />
 
             <div className="flex-shrink-0 relative">
