@@ -18,16 +18,16 @@ function ReflectiveGround() {
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
       <planeGeometry args={[200, 200]} />
       <MeshReflectorMaterial
-        mirror={0.15}
+        mirror={0.25}
         resolution={512}
-        mixBlur={8}
-        mixStrength={0.6}
-        roughness={0.95}
-        depthScale={0.8}
-        minDepthThreshold={0.4}
-        maxDepthThreshold={1}
-        color="#080808"
-        metalness={0.05}
+        mixBlur={6}
+        mixStrength={0.8}
+        roughness={0.85}
+        depthScale={1.0}
+        minDepthThreshold={0.3}
+        maxDepthThreshold={1.2}
+        color="#0a0a12"
+        metalness={0.15}
       />
     </mesh>
   );
@@ -77,7 +77,7 @@ function AnimatedGrid() {
             float pulse = sin(dist * 0.08 - uTime * 0.8) * 0.5 + 0.5;
             float fade = 1.0 - smoothstep(0.0, 80.0, dist);
 
-            float alpha = gridLine * fade * (0.08 + pulse * 0.06);
+            float alpha = gridLine * fade * (0.18 + pulse * 0.12);
             gl_FragColor = vec4(uColor, alpha);
           }
         `}
@@ -133,9 +133,9 @@ function FloatingParticles() {
       </bufferGeometry>
       <pointsMaterial
         color="#1DB954"
-        size={0.15}
+        size={0.4}
         transparent
-        opacity={0.7}
+        opacity={0.85}
         sizeAttenuation
       />
     </points>
@@ -180,10 +180,10 @@ function DustParticles() {
         />
       </bufferGeometry>
       <pointsMaterial
-        color="#ffffff"
-        size={0.05}
+        color="#8888ff"
+        size={0.12}
         transparent
-        opacity={0.2}
+        opacity={0.35}
         sizeAttenuation
       />
     </points>
@@ -264,10 +264,12 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
       shadows
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
-      <color attach="background" args={['#050510']} />
-      <fog attach="fog" args={['#080810', 30, 90]} />
+      <color attach="background" args={['#06060F']} />
+      <fog attach="fog" args={['#08081A', 25, 85]} />
 
-      <ambientLight intensity={0.2} />
+      <ambientLight intensity={0.15} />
+      {/* Sky haze for atmosphere */}
+      <hemisphereLight args={['#1a1a3a', '#080810', 0.15]} />
       <directionalLight
         position={[15, 25, 10]}
         intensity={0.5}
@@ -299,9 +301,9 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
 
       <EffectComposer>
         <Bloom
-          intensity={1.0}
-          luminanceThreshold={0.5}
-          luminanceSmoothing={0.3}
+          intensity={1.4}
+          luminanceThreshold={0.3}
+          luminanceSmoothing={0.4}
           mipmapBlur
         />
       </EffectComposer>

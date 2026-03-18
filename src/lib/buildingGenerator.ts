@@ -2,28 +2,28 @@ import { SpotifyProfile, BuildingParams, BuildingStyle } from '@/types';
 
 const GENRE_COLORS: Record<string, string> = {
   pop: '#FF69B4',
-  rock: '#DC143C',
+  rock: '#FF2244',
   'hip hop': '#FFD700',
   'hip-hop': '#FFD700',
   rap: '#FFD700',
   electronic: '#00FFFF',
   edm: '#00FFFF',
-  'r&b': '#9370DB',
-  soul: '#9370DB',
-  jazz: '#CD853F',
-  classical: '#F5F5DC',
-  indie: '#98FB98',
-  metal: '#2F4F4F',
-  country: '#DEB887',
-  latin: '#FF6347',
-  reggae: '#00FF00',
-  'k-pop': '#FF69B4',
-  punk: '#FF4444',
-  blues: '#4169E1',
-  folk: '#A0522D',
-  afrobeats: '#FF8C00',
+  'r&b': '#BF5FFF',
+  soul: '#BF5FFF',
+  jazz: '#4488FF',
+  classical: '#AA66FF',
+  indie: '#39FF8F',
+  metal: '#FF3333',
+  country: '#FF8800',
+  latin: '#FF5544',
+  reggae: '#00FF66',
+  'k-pop': '#FF44CC',
+  punk: '#FF2222',
+  blues: '#3388FF',
+  folk: '#22FFAA',
+  afrobeats: '#FF6600',
   funk: '#FF00FF',
-  synthwave: '#8B00FF',
+  synthwave: '#AA00FF',
 };
 
 const DEFAULT_COLOR = '#1DB954';
@@ -125,8 +125,8 @@ export function generateBuildingParams(
 
   // City grid layout - proper spacing with streets/gaps
   const gridCols = 5;
-  const spacing = 12; // wider spacing to prevent overlaps
-  const streetWidth = 2; // gap for "streets"
+  const spacing = 16; // wider spacing for streets/blocks/depth
+  const streetWidth = 3; // gap for "streets"
   const row = Math.floor(index / gridCols);
   const col = index % gridCols;
 

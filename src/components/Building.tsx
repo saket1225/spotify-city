@@ -19,13 +19,13 @@ function getStyleConfig(style: BuildingStyle) {
     case 'skyscraper':
       return { roughness: 0.1, metalness: 0.8, segments: 5, taperFactor: 0.92, crown: 'antenna' as CrownType, footprint: 'tapered' as FootprintType };
     case 'fortress':
-      return { roughness: 0.8, metalness: 0.3, segments: 3, taperFactor: 1.0, crown: 'battlements' as CrownType, footprint: 'l-shape' as FootprintType };
+      return { roughness: 0.4, metalness: 0.5, segments: 3, taperFactor: 1.0, crown: 'battlements' as CrownType, footprint: 'l-shape' as FootprintType };
     case 'neon-tower':
       return { roughness: 0.2, metalness: 0.6, segments: 6, taperFactor: 0.95, crown: 'helipad' as CrownType, footprint: 'cylinder' as FootprintType };
     case 'penthouse':
       return { roughness: 0.3, metalness: 0.5, segments: 4, taperFactor: 0.88, crown: 'dome' as CrownType, footprint: 'box' as FootprintType };
     case 'brownstone':
-      return { roughness: 0.9, metalness: 0.1, segments: 3, taperFactor: 1.0, crown: 'pitched' as CrownType, footprint: 'cluster' as FootprintType };
+      return { roughness: 0.35, metalness: 0.5, segments: 3, taperFactor: 1.0, crown: 'pitched' as CrownType, footprint: 'cluster' as FootprintType };
     case 'cathedral':
       return { roughness: 0.5, metalness: 0.4, segments: 4, taperFactor: 0.9, crown: 'spire' as CrownType, footprint: 't-shape' as FootprintType };
     default:
@@ -318,8 +318,8 @@ export default function Building({ params, onClick }: BuildingProps) {
     }
   }, [height, width, depth, config.crown, primaryColor, secondaryColor, accentColor]);
 
-  const emissiveColor = style === 'neon-tower' ? accentColor : '#ffffcc';
-  const baseEmissiveIntensity = style === 'neon-tower' ? windowGlow * 3 : windowGlow * 1.5;
+  const emissiveColor = accentColor;
+  const baseEmissiveIntensity = style === 'neon-tower' ? windowGlow * 4 : windowGlow * 3;
 
   // Pulsing glow - some buildings pulse subtly
   const shouldPulse = buildingVariant > 0.4;
@@ -340,8 +340,10 @@ export default function Building({ params, onClick }: BuildingProps) {
               <cylinderGeometry args={[seg.w / 2, seg.w / 2, seg.h, 24]} />
               <meshPhysicalMaterial
                 color={i === 0 ? secondaryColor : primaryColor}
-                roughness={config.roughness}
-                metalness={config.metalness}
+                emissive={primaryColor}
+                emissiveIntensity={style === 'neon-tower' ? 0.6 : 0.35}
+                roughness={Math.min(config.roughness, 0.4)}
+                metalness={Math.max(config.metalness, 0.5)}
                 transparent
                 opacity={0.95}
               />
@@ -351,8 +353,10 @@ export default function Building({ params, onClick }: BuildingProps) {
               <boxGeometry args={[seg.w, seg.h, seg.d]} />
               <meshPhysicalMaterial
                 color={i === 0 ? secondaryColor : primaryColor}
-                roughness={config.roughness}
-                metalness={config.metalness}
+                emissive={primaryColor}
+                emissiveIntensity={style === 'neon-tower' ? 0.6 : 0.35}
+                roughness={Math.min(config.roughness, 0.4)}
+                metalness={Math.max(config.metalness, 0.5)}
                 transparent
                 opacity={0.95}
               />
@@ -366,12 +370,12 @@ export default function Building({ params, onClick }: BuildingProps) {
         seg.isCylinder ? (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <cylinderGeometry args={[seg.w / 2 + 0.01, seg.w / 2 + 0.01, seg.h + 0.02, 24]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.2 : 0.07} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.12} />
           </mesh>
         ) : (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <boxGeometry args={[seg.w + 0.02, seg.h + 0.02, seg.d + 0.02]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.2 : 0.07} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.12} />
           </mesh>
         )
       ))}
@@ -401,17 +405,15 @@ export default function Building({ params, onClick }: BuildingProps) {
       {crown}
 
       {/* Base accent lights */}
-      <pointLight position={[width * 0.6, 0.3, 0]} intensity={hovered ? 0.8 : 0.2} color={primaryColor} distance={4} />
-      <pointLight position={[-width * 0.6, 0.3, 0]} intensity={hovered ? 0.8 : 0.2} color={primaryColor} distance={4} />
-      <pointLight position={[0, 0.3, depth * 0.6]} intensity={hovered ? 0.8 : 0.2} color={primaryColor} distance={4} />
+      <pointLight position={[width * 0.6, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
+      <pointLight position={[-width * 0.6, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
+      <pointLight position={[0, 0.3, depth * 0.6]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
 
-      {/* Neon edge glow for neon-tower style */}
-      {style === 'neon-tower' && (
-        <mesh position={[0, height * 0.5, 0]}>
-          <cylinderGeometry args={[width / 2 + 0.15, width / 2 + 0.15, height + 0.15, 24]} />
-          <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.35 : 0.15} />
-        </mesh>
-      )}
+      {/* Neon edge glow on all buildings */}
+      <mesh position={[0, height * 0.5, 0]}>
+        <boxGeometry args={[width + 0.2, height + 0.2, depth + 0.2]} />
+        <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.1} />
+      </mesh>
 
       {/* Pulsing ambient glow around building base */}
       {shouldPulse && (
