@@ -1,0 +1,23 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { fetchUserProfile } from "@/lib/spotify";
+
+export async function GET() {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  try {
+    const profile = await fetchUserProfile(session.accessToken);
+    return NextResponse.json(profile);
+  } catch (error) {
+    console.error("Spotify API error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch Spotify data" },
+      { status: 500 }
+    );
+  }
+}
