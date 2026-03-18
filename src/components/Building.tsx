@@ -11,23 +11,32 @@ interface BuildingProps {
   onClick: (params: BuildingParams) => void;
 }
 
+type CrownType = 'antenna' | 'spire' | 'flat' | 'battlements' | 'pitched' | 'wide-top' | 'dome' | 'helipad' | 'stepped';
+type FootprintType = 'box' | 'cylinder' | 'l-shape' | 't-shape' | 'tapered' | 'cluster';
+
 function getStyleConfig(style: BuildingStyle) {
   switch (style) {
     case 'skyscraper':
-      return { roughness: 0.1, metalness: 0.8, segments: 5, taperFactor: 0.92, crown: 'antenna' as const };
+      return { roughness: 0.1, metalness: 0.8, segments: 5, taperFactor: 0.92, crown: 'antenna' as CrownType, footprint: 'tapered' as FootprintType };
     case 'fortress':
-      return { roughness: 0.8, metalness: 0.3, segments: 3, taperFactor: 1.0, crown: 'battlements' as const };
+      return { roughness: 0.8, metalness: 0.3, segments: 3, taperFactor: 1.0, crown: 'battlements' as CrownType, footprint: 'l-shape' as FootprintType };
     case 'neon-tower':
-      return { roughness: 0.2, metalness: 0.6, segments: 6, taperFactor: 0.95, crown: 'flat' as const };
+      return { roughness: 0.2, metalness: 0.6, segments: 6, taperFactor: 0.95, crown: 'helipad' as CrownType, footprint: 'cylinder' as FootprintType };
     case 'penthouse':
-      return { roughness: 0.3, metalness: 0.5, segments: 4, taperFactor: 0.88, crown: 'wide-top' as const };
+      return { roughness: 0.3, metalness: 0.5, segments: 4, taperFactor: 0.88, crown: 'dome' as CrownType, footprint: 'box' as FootprintType };
     case 'brownstone':
-      return { roughness: 0.9, metalness: 0.1, segments: 3, taperFactor: 1.0, crown: 'pitched' as const };
+      return { roughness: 0.9, metalness: 0.1, segments: 3, taperFactor: 1.0, crown: 'pitched' as CrownType, footprint: 'cluster' as FootprintType };
     case 'cathedral':
-      return { roughness: 0.5, metalness: 0.4, segments: 4, taperFactor: 0.9, crown: 'spire' as const };
+      return { roughness: 0.5, metalness: 0.4, segments: 4, taperFactor: 0.9, crown: 'spire' as CrownType, footprint: 't-shape' as FootprintType };
     default:
-      return { roughness: 0.4, metalness: 0.5, segments: 4, taperFactor: 0.95, crown: 'flat' as const };
+      return { roughness: 0.4, metalness: 0.5, segments: 4, taperFactor: 0.95, crown: 'stepped' as CrownType, footprint: 'box' as FootprintType };
   }
+}
+
+// Deterministic hash from position for consistent randomness
+function seededRandom(seed: number) {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
 }
 
 export default function Building({ params, onClick }: BuildingProps) {
@@ -37,6 +46,11 @@ export default function Building({ params, onClick }: BuildingProps) {
   const config = getStyleConfig(style);
 
   const glowRef = useRef(0);
+  const seed = position[0] * 73 + position[2] * 137;
+  const buildingVariant = seededRandom(seed);
+
+  // Blinking windows state
+  const windowBlinkRef = useRef<Float32Array | null>(null);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -49,32 +63,105 @@ export default function Building({ params, onClick }: BuildingProps) {
     glowRef.current = 0.5 + Math.sin(t * 1.5 + position[0]) * 0.3;
   });
 
-  const segments = useMemo(() => {
-    const segs: { y: number; h: number; w: number; d: number }[] = [];
-    const segCount = config.segments;
-    const segHeight = height / segCount;
+  // Generate footprint geometry pieces
+  const footprintPieces = useMemo(() => {
+    const pieces: { x: number; z: number; w: number; d: number; isMain: boolean }[] = [];
 
-    // Base/lobby - wider
-    segs.push({ y: segHeight * 0.5, h: segHeight, w: width * 1.15, d: depth * 1.15 });
-
-    // Body segments with slight taper
-    for (let i = 1; i < segCount; i++) {
-      const scale = Math.pow(config.taperFactor, i);
-      const variation = 1 + Math.sin(i * 2.1) * 0.03;
-      segs.push({
-        y: segHeight * (i + 0.5),
-        h: segHeight - 0.04,
-        w: width * scale * variation,
-        d: depth * scale * variation,
-      });
+    switch (config.footprint) {
+      case 'l-shape': {
+        // Main block
+        pieces.push({ x: 0, z: 0, w: width, d: depth, isMain: true });
+        // L extension
+        pieces.push({ x: width * 0.35, z: depth * 0.35, w: width * 0.55, d: depth * 0.55, isMain: false });
+        break;
+      }
+      case 't-shape': {
+        // Main tall block
+        pieces.push({ x: 0, z: 0, w: width * 0.6, d: depth, isMain: true });
+        // Cross bar (shorter)
+        pieces.push({ x: 0, z: 0, w: width * 1.3, d: depth * 0.45, isMain: false });
+        break;
+      }
+      case 'cluster': {
+        // Main building
+        pieces.push({ x: 0, z: 0, w: width * 0.7, d: depth * 0.7, isMain: true });
+        // Smaller attached buildings
+        pieces.push({ x: width * 0.4, z: depth * 0.15, w: width * 0.45, d: depth * 0.5, isMain: false });
+        pieces.push({ x: -width * 0.2, z: -depth * 0.35, w: width * 0.4, d: depth * 0.4, isMain: false });
+        break;
+      }
+      default: {
+        pieces.push({ x: 0, z: 0, w: width, d: depth, isMain: true });
+        break;
+      }
     }
-    return segs;
-  }, [height, width, depth, config]);
+    return pieces;
+  }, [width, depth, config.footprint]);
+
+  const segments = useMemo(() => {
+    const allSegs: { y: number; h: number; w: number; d: number; x: number; z: number; isCylinder: boolean }[] = [];
+
+    for (const piece of footprintPieces) {
+      const pieceHeight = piece.isMain ? height : height * (0.4 + buildingVariant * 0.35);
+      const segCount = piece.isMain ? config.segments : Math.max(2, config.segments - 2);
+      const segHeight = pieceHeight / segCount;
+      const isCylinder = config.footprint === 'cylinder' && piece.isMain;
+
+      // Base/lobby - wider
+      allSegs.push({
+        y: segHeight * 0.5,
+        h: segHeight,
+        w: piece.w * 1.15,
+        d: piece.d * 1.15,
+        x: piece.x,
+        z: piece.z,
+        isCylinder,
+      });
+
+      // Body segments with taper
+      for (let i = 1; i < segCount; i++) {
+        let scale = Math.pow(config.taperFactor, i);
+        // Extra taper for tapered footprint
+        if (config.footprint === 'tapered' && piece.isMain) {
+          scale *= Math.pow(0.96, i);
+        }
+        const variation = 1 + Math.sin(i * 2.1) * 0.03;
+        allSegs.push({
+          y: segHeight * (i + 0.5),
+          h: segHeight - 0.04,
+          w: piece.w * scale * variation,
+          d: piece.d * scale * variation,
+          x: piece.x,
+          z: piece.z,
+          isCylinder,
+        });
+      }
+    }
+    return allSegs;
+  }, [height, width, depth, config, footprintPieces, buildingVariant]);
 
   const windows = useMemo(() => {
-    const wins: { pos: [number, number, number]; rot: [number, number, number]; segW: number; segD: number }[] = [];
+    const wins: { pos: [number, number, number]; rot: [number, number, number]; blinkId: number }[] = [];
+    let blinkId = 0;
 
     for (const seg of segments) {
+      if (seg.isCylinder) {
+        // Cylindrical windows around circumference
+        const radius = seg.w / 2;
+        const rows = Math.max(1, Math.floor(seg.h / 1.0));
+        const cols = Math.max(4, Math.floor(radius * Math.PI * 2 / 0.7));
+        for (let r = 0; r < rows; r++) {
+          const y = seg.y - seg.h / 2 + 0.4 + r * (seg.h / rows);
+          for (let c = 0; c < cols; c++) {
+            const angle = (c / cols) * Math.PI * 2;
+            const wx = seg.x + Math.cos(angle) * (radius + 0.01);
+            const wz = seg.z + Math.sin(angle) * (radius + 0.01);
+            wins.push({ pos: [wx, y, wz], rot: [0, -angle + Math.PI / 2, 0], blinkId: blinkId++ });
+          }
+        }
+        continue;
+      }
+
       const rows = Math.max(1, Math.floor(seg.h / 1.0));
       const colsFront = Math.max(1, Math.floor(seg.w / 0.7));
       const colsSide = Math.max(1, Math.floor(seg.d / 0.7));
@@ -82,22 +169,36 @@ export default function Building({ params, onClick }: BuildingProps) {
       for (let r = 0; r < rows; r++) {
         const y = seg.y - seg.h / 2 + 0.4 + r * (seg.h / rows);
         for (let c = 0; c < colsFront; c++) {
-          const x = -seg.w / 2 + 0.35 + c * ((seg.w - 0.4) / Math.max(1, colsFront - 1 || 1));
-          wins.push({ pos: [x, y, seg.d / 2 + 0.01], rot: [0, 0, 0], segW: seg.w, segD: seg.d });
-          wins.push({ pos: [x, y, -seg.d / 2 - 0.01], rot: [0, Math.PI, 0], segW: seg.w, segD: seg.d });
+          const x = seg.x - seg.w / 2 + 0.35 + c * ((seg.w - 0.4) / Math.max(1, colsFront - 1 || 1));
+          wins.push({ pos: [x, y, seg.z + seg.d / 2 + 0.01], rot: [0, 0, 0], blinkId: blinkId++ });
+          wins.push({ pos: [x, y, seg.z - seg.d / 2 - 0.01], rot: [0, Math.PI, 0], blinkId: blinkId++ });
         }
         for (let c = 0; c < colsSide; c++) {
-          const z = -seg.d / 2 + 0.35 + c * ((seg.d - 0.4) / Math.max(1, colsSide - 1 || 1));
-          wins.push({ pos: [seg.w / 2 + 0.01, y, z], rot: [0, Math.PI / 2, 0], segW: seg.w, segD: seg.d });
-          wins.push({ pos: [-seg.w / 2 - 0.01, y, z], rot: [0, -Math.PI / 2, 0], segW: seg.w, segD: seg.d });
+          const z = seg.z - seg.d / 2 + 0.35 + c * ((seg.d - 0.4) / Math.max(1, colsSide - 1 || 1));
+          wins.push({ pos: [seg.x + seg.w / 2 + 0.01, y, z], rot: [0, Math.PI / 2, 0], blinkId: blinkId++ });
+          wins.push({ pos: [seg.x - seg.w / 2 - 0.01, y, z], rot: [0, -Math.PI / 2, 0], blinkId: blinkId++ });
         }
       }
     }
+
     return wins;
   }, [segments]);
 
+  // Initialize blink timings per window
+  const windowBlinkTimings = useMemo(() => {
+    const totalWindows = windows.length;
+    const timings = new Float32Array(totalWindows);
+    for (let i = 0; i < totalWindows; i++) {
+      timings[i] = seededRandom(seed + i * 31) * 100; // phase offset
+    }
+    windowBlinkRef.current = timings;
+    return timings;
+  }, [windows.length, seed]);
+
   const crown = useMemo(() => {
-    const topY = height;
+    const mainHeight = height;
+    const topY = mainHeight;
+
     switch (config.crown) {
       case 'antenna':
         return (
@@ -110,14 +211,70 @@ export default function Building({ params, onClick }: BuildingProps) {
               <sphereGeometry args={[0.1, 8, 8]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1} />
             </mesh>
+            {/* Second shorter antenna */}
+            <mesh position={[width * 0.25, 0.8, 0]}>
+              <cylinderGeometry args={[0.02, 0.04, 1.6, 6]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.3} />
+            </mesh>
           </group>
         );
       case 'spire':
         return (
-          <mesh position={[0, topY + 1.5, 0]}>
-            <coneGeometry args={[width * 0.25, 3, 6]} />
-            <meshPhysicalMaterial color={secondaryColor} roughness={0.3} metalness={0.7} />
-          </mesh>
+          <group position={[0, topY, 0]}>
+            <mesh position={[0, 2, 0]}>
+              <coneGeometry args={[width * 0.25, 4, 6]} />
+              <meshPhysicalMaterial color={secondaryColor} roughness={0.3} metalness={0.7} />
+            </mesh>
+            {/* Flying buttress-like supports */}
+            {[0, 1, 2, 3].map((i) => (
+              <mesh key={`buttress-${i}`} position={[Math.cos(i * Math.PI / 2) * width * 0.3, 0.5, Math.sin(i * Math.PI / 2) * depth * 0.3]} rotation={[0, i * Math.PI / 2, Math.PI / 6]}>
+                <boxGeometry args={[0.08, 1.2, 0.08]} />
+                <meshPhysicalMaterial color={secondaryColor} roughness={0.4} metalness={0.6} />
+              </mesh>
+            ))}
+          </group>
+        );
+      case 'dome':
+        return (
+          <group position={[0, topY, 0]}>
+            <mesh position={[0, 0, 0]}>
+              <sphereGeometry args={[Math.min(width, depth) * 0.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <meshPhysicalMaterial color={secondaryColor} roughness={0.2} metalness={0.7} transparent opacity={0.85} />
+            </mesh>
+          </group>
+        );
+      case 'helipad':
+        return (
+          <group position={[0, topY, 0]}>
+            {/* Flat roof */}
+            <mesh position={[0, 0.05, 0]}>
+              <boxGeometry args={[width * 1.1, 0.1, depth * 1.1]} />
+              <meshPhysicalMaterial color={secondaryColor} roughness={0.5} metalness={0.5} />
+            </mesh>
+            {/* Helipad circle */}
+            <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[width * 0.2, width * 0.35, 24]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} side={THREE.DoubleSide} />
+            </mesh>
+            {/* Corner lights */}
+            {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([xd, zd], i) => (
+              <mesh key={`hpad-${i}`} position={[xd * width * 0.45, 0.2, zd * depth * 0.45]}>
+                <sphereGeometry args={[0.06, 6, 6]} />
+                <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={2} />
+              </mesh>
+            ))}
+          </group>
+        );
+      case 'stepped':
+        return (
+          <group position={[0, topY, 0]}>
+            {[0, 1, 2].map((i) => (
+              <mesh key={`step-${i}`} position={[0, i * 0.35 + 0.175, 0]}>
+                <boxGeometry args={[width * (0.9 - i * 0.2), 0.35, depth * (0.9 - i * 0.2)]} />
+                <meshPhysicalMaterial color={i === 2 ? accentColor : secondaryColor} roughness={0.3} metalness={0.6} emissive={i === 2 ? accentColor : '#000000'} emissiveIntensity={i === 2 ? 0.4 : 0} />
+              </mesh>
+            ))}
+          </group>
         );
       case 'wide-top':
         return (
@@ -137,6 +294,11 @@ export default function Building({ params, onClick }: BuildingProps) {
                 </mesh>
               ))
             )}
+            {/* Center turret */}
+            <mesh position={[0, 0.6, 0]}>
+              <cylinderGeometry args={[0.15, 0.2, 1.2, 8]} />
+              <meshPhysicalMaterial color={secondaryColor} roughness={0.6} metalness={0.4} />
+            </mesh>
           </group>
         );
       case 'pitched':
@@ -146,7 +308,7 @@ export default function Building({ params, onClick }: BuildingProps) {
             <meshPhysicalMaterial color={secondaryColor} roughness={0.8} metalness={0.1} />
           </mesh>
         );
-      default: // flat
+      default:
         return (
           <mesh position={[0, topY + 0.05, 0]}>
             <boxGeometry args={[width * 0.9, 0.1, depth * 0.9]} />
@@ -157,7 +319,10 @@ export default function Building({ params, onClick }: BuildingProps) {
   }, [height, width, depth, config.crown, primaryColor, secondaryColor, accentColor]);
 
   const emissiveColor = style === 'neon-tower' ? accentColor : '#ffffcc';
-  const emissiveIntensity = style === 'neon-tower' ? windowGlow * 3 : windowGlow * 1.5;
+  const baseEmissiveIntensity = style === 'neon-tower' ? windowGlow * 3 : windowGlow * 1.5;
+
+  // Pulsing glow - some buildings pulse subtly
+  const shouldPulse = buildingVariant > 0.4;
 
   return (
     <group
@@ -169,39 +334,68 @@ export default function Building({ params, onClick }: BuildingProps) {
     >
       {/* Building segments */}
       {segments.map((seg, i) => (
-        <mesh key={`seg-${i}`} position={[0, seg.y, 0]} castShadow>
-          <boxGeometry args={[seg.w, seg.h, seg.d]} />
-          <meshPhysicalMaterial
-            color={i === 0 ? secondaryColor : primaryColor}
-            roughness={config.roughness}
-            metalness={config.metalness}
-            transparent
-            opacity={0.95}
-          />
-        </mesh>
+        <group key={`seg-group-${i}`}>
+          {seg.isCylinder ? (
+            <mesh position={[seg.x, seg.y, seg.z]} castShadow>
+              <cylinderGeometry args={[seg.w / 2, seg.w / 2, seg.h, 24]} />
+              <meshPhysicalMaterial
+                color={i === 0 ? secondaryColor : primaryColor}
+                roughness={config.roughness}
+                metalness={config.metalness}
+                transparent
+                opacity={0.95}
+              />
+            </mesh>
+          ) : (
+            <mesh position={[seg.x, seg.y, seg.z]} castShadow>
+              <boxGeometry args={[seg.w, seg.h, seg.d]} />
+              <meshPhysicalMaterial
+                color={i === 0 ? secondaryColor : primaryColor}
+                roughness={config.roughness}
+                metalness={config.metalness}
+                transparent
+                opacity={0.95}
+              />
+            </mesh>
+          )}
+        </group>
       ))}
 
       {/* Edge wireframe overlay for definition */}
       {segments.map((seg, i) => (
-        <mesh key={`wire-${i}`} position={[0, seg.y, 0]}>
-          <boxGeometry args={[seg.w + 0.02, seg.h + 0.02, seg.d + 0.02]} />
-          <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.2 : 0.07} />
-        </mesh>
+        seg.isCylinder ? (
+          <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
+            <cylinderGeometry args={[seg.w / 2 + 0.01, seg.w / 2 + 0.01, seg.h + 0.02, 24]} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.2 : 0.07} />
+          </mesh>
+        ) : (
+          <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
+            <boxGeometry args={[seg.w + 0.02, seg.h + 0.02, seg.d + 0.02]} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.2 : 0.07} />
+          </mesh>
+        )
       ))}
 
-      {/* Windows with emissive glow */}
-      {windows.map((w, i) => (
-        <mesh key={`win-${i}`} position={w.pos} rotation={w.rot}>
-          <planeGeometry args={[0.25, 0.35]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            emissive={emissiveColor}
-            emissiveIntensity={emissiveIntensity}
-            transparent
-            opacity={0.9}
+      {/* Windows with emissive glow and blinking */}
+      {windows.map((w, i) => {
+        // Some windows blink on/off
+        const blinkPhase = windowBlinkTimings[w.blinkId % windowBlinkTimings.length];
+        const shouldBlink = blinkPhase > 80; // ~20% of windows blink
+
+        return (
+          <WindowPane
+            key={`win-${i}`}
+            position={w.pos}
+            rotation={w.rot}
+            emissiveColor={emissiveColor}
+            baseIntensity={baseEmissiveIntensity}
+            shouldBlink={shouldBlink}
+            blinkPhase={blinkPhase}
+            shouldPulse={shouldPulse}
+            seed={seed}
           />
-        </mesh>
-      ))}
+        );
+      })}
 
       {/* Crown */}
       {crown}
@@ -213,12 +407,15 @@ export default function Building({ params, onClick }: BuildingProps) {
 
       {/* Neon edge glow for neon-tower style */}
       {style === 'neon-tower' && (
-        <>
-          <mesh position={[0, height * 0.5, 0]}>
-            <boxGeometry args={[width + 0.15, height + 0.15, depth + 0.15]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.35 : 0.15} />
-          </mesh>
-        </>
+        <mesh position={[0, height * 0.5, 0]}>
+          <cylinderGeometry args={[width / 2 + 0.15, width / 2 + 0.15, height + 0.15, 24]} />
+          <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.35 : 0.15} />
+        </mesh>
+      )}
+
+      {/* Pulsing ambient glow around building base */}
+      {shouldPulse && (
+        <PulsingGlow color={primaryColor} width={width} depth={depth} seed={seed} />
       )}
 
       {/* Hover label */}
@@ -245,5 +442,74 @@ export default function Building({ params, onClick }: BuildingProps) {
         </Html>
       )}
     </group>
+  );
+}
+
+// Separate component for windows so they can animate independently
+function WindowPane({ position, rotation, emissiveColor, baseIntensity, shouldBlink, blinkPhase, shouldPulse, seed }: {
+  position: [number, number, number];
+  rotation: [number, number, number];
+  emissiveColor: string;
+  baseIntensity: number;
+  shouldBlink: boolean;
+  blinkPhase: number;
+  shouldPulse: boolean;
+  seed: number;
+}) {
+  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+
+  useFrame((state) => {
+    if (!matRef.current) return;
+    const t = state.clock.elapsedTime;
+    let intensity = baseIntensity;
+
+    if (shouldBlink) {
+      // Blink: occasionally turn off
+      const blink = Math.sin(t * 0.3 + blinkPhase) + Math.sin(t * 0.7 + blinkPhase * 1.3);
+      if (blink < -1.2) {
+        intensity = 0.05;
+      }
+    }
+
+    if (shouldPulse) {
+      intensity *= 0.8 + Math.sin(t * 0.8 + seed * 0.1) * 0.2;
+    }
+
+    matRef.current.emissiveIntensity = intensity;
+  });
+
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[0.25, 0.35]} />
+      <meshStandardMaterial
+        ref={matRef}
+        color="#ffffff"
+        emissive={emissiveColor}
+        emissiveIntensity={baseIntensity}
+        transparent
+        opacity={0.9}
+      />
+    </mesh>
+  );
+}
+
+// Pulsing glow effect around building base
+function PulsingGlow({ color, width, depth, seed }: { color: string; width: number; depth: number; seed: number }) {
+  const ref = useRef<THREE.PointLight>(null);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = state.clock.elapsedTime;
+    ref.current.intensity = 0.3 + Math.sin(t * 1.2 + seed * 0.5) * 0.25;
+  });
+
+  return (
+    <pointLight
+      ref={ref}
+      position={[0, 1, 0]}
+      color={color}
+      intensity={0.3}
+      distance={Math.max(width, depth) * 3}
+    />
   );
 }

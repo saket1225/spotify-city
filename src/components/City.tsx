@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, MeshReflectorMaterial } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Building from './Building';
@@ -13,11 +13,22 @@ interface CityProps {
   onBuildingClick: (params: BuildingParams) => void;
 }
 
-function Ground() {
+function ReflectiveGround() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
       <planeGeometry args={[200, 200]} />
-      <meshStandardMaterial color="#080808" roughness={0.95} metalness={0.05} />
+      <MeshReflectorMaterial
+        mirror={0.15}
+        resolution={512}
+        mixBlur={8}
+        mixStrength={0.6}
+        roughness={0.95}
+        depthScale={0.8}
+        minDepthThreshold={0.4}
+        maxDepthThreshold={1}
+        color="#080808"
+        metalness={0.05}
+      />
     </mesh>
   );
 }
@@ -76,31 +87,36 @@ function AnimatedGrid() {
 }
 
 function FloatingParticles() {
-  const count = 80;
+  const count = 200;
   const ref = useRef<THREE.Points>(null);
 
-  const [positions, speeds] = useMemo(() => {
+  const [positions, speeds, sizes] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const spd = new Float32Array(count);
+    const sz = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 60;
-      pos[i * 3 + 1] = Math.random() * 30;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 60;
-      spd[i] = 0.02 + Math.random() * 0.04;
+      pos[i * 3] = (Math.random() - 0.5) * 80;
+      pos[i * 3 + 1] = Math.random() * 35;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+      spd[i] = 0.01 + Math.random() * 0.04;
+      sz[i] = 0.06 + Math.random() * 0.14;
     }
-    return [pos, spd];
+    return [pos, spd, sz];
   }, []);
 
-  useFrame(() => {
+  useFrame((state) => {
     if (!ref.current) return;
     const posAttr = ref.current.geometry.attributes.position;
     const arr = posAttr.array as Float32Array;
+    const t = state.clock.elapsedTime;
     for (let i = 0; i < count; i++) {
       arr[i * 3 + 1] += speeds[i];
-      if (arr[i * 3 + 1] > 35) {
+      // Gentle horizontal drift
+      arr[i * 3] += Math.sin(t * 0.2 + i) * 0.003;
+      if (arr[i * 3 + 1] > 40) {
         arr[i * 3 + 1] = 0;
-        arr[i * 3] = (Math.random() - 0.5) * 60;
-        arr[i * 3 + 2] = (Math.random() - 0.5) * 60;
+        arr[i * 3] = (Math.random() - 0.5) * 80;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 80;
       }
     }
     posAttr.needsUpdate = true;
@@ -117,9 +133,57 @@ function FloatingParticles() {
       </bufferGeometry>
       <pointsMaterial
         color="#1DB954"
-        size={0.12}
+        size={0.15}
         transparent
-        opacity={0.6}
+        opacity={0.7}
+        sizeAttenuation
+      />
+    </points>
+  );
+}
+
+// Secondary dust particles for depth
+function DustParticles() {
+  const count = 150;
+  const ref = useRef<THREE.Points>(null);
+
+  const positions = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 100;
+      pos[i * 3 + 1] = Math.random() * 25;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 100;
+    }
+    return pos;
+  }, []);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const posAttr = ref.current.geometry.attributes.position;
+    const arr = posAttr.array as Float32Array;
+    const t = state.clock.elapsedTime;
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] += Math.sin(t * 0.1 + i * 0.5) * 0.005;
+      arr[i * 3 + 1] += Math.cos(t * 0.15 + i * 0.3) * 0.003;
+      arr[i * 3 + 2] += Math.sin(t * 0.12 + i * 0.7) * 0.005;
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          args={[positions, 3]}
+          count={count}
+        />
+      </bufferGeometry>
+      <pointsMaterial
+        color="#ffffff"
+        size={0.05}
+        transparent
+        opacity={0.2}
         sizeAttenuation
       />
     </points>
@@ -154,6 +218,17 @@ function AudioWavePlane() {
   );
 }
 
+// Subtle camera sway for cinematic feel
+function CameraSway() {
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    // Very subtle sway
+    state.camera.position.x += Math.sin(t * 0.05) * 0.003;
+    state.camera.position.y += Math.cos(t * 0.03) * 0.002;
+  });
+  return null;
+}
+
 function SmartOrbitControls() {
   const controlsRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
   const autoRotateRef = useRef(true);
@@ -173,7 +248,7 @@ function SmartOrbitControls() {
       dampingFactor={0.05}
       minDistance={8}
       maxDistance={65}
-      maxPolarAngle={Math.PI / 2.15}
+      maxPolarAngle={Math.PI / 2.05}
       autoRotate
       autoRotateSpeed={0.3}
       onStart={handleInteraction}
@@ -184,33 +259,37 @@ function SmartOrbitControls() {
 export default function City({ buildings, onBuildingClick }: CityProps) {
   return (
     <Canvas
-      camera={{ position: [40, 30, 40], fov: 45 }}
+      camera={{ position: [30, 16, 30], fov: 50 }}
       style={{ width: '100%', height: '100%' }}
       shadows
-      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.2 }}
+      gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
       <color attach="background" args={['#050510']} />
-      <fog attach="fog" args={['#050510', 40, 100]} />
+      <fog attach="fog" args={['#080810', 30, 90]} />
 
-      <ambientLight intensity={0.25} />
+      <ambientLight intensity={0.2} />
       <directionalLight
         position={[15, 25, 10]}
-        intensity={0.6}
+        intensity={0.5}
         color="#e8e0ff"
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
       <pointLight position={[0, 20, 0]} intensity={0.4} color="#1DB954" distance={60} />
-      <pointLight position={[-20, 8, -20]} intensity={0.2} color="#4169E1" distance={40} />
-      <pointLight position={[20, 8, 20]} intensity={0.2} color="#FF69B4" distance={40} />
+      <pointLight position={[-20, 8, -20]} intensity={0.3} color="#4169E1" distance={40} />
+      <pointLight position={[20, 8, 20]} intensity={0.3} color="#FF69B4" distance={40} />
+      {/* Low rim light for dramatic uplighting */}
+      <pointLight position={[0, 1, 0]} intensity={0.15} color="#1DB954" distance={50} />
 
-      <Stars radius={120} depth={60} count={3000} factor={5} fade speed={0.3} />
+      <Stars radius={120} depth={60} count={4000} factor={5} fade speed={0.3} />
 
-      <Ground />
+      <ReflectiveGround />
       <AnimatedGrid />
       <AudioWavePlane />
       <FloatingParticles />
+      <DustParticles />
+      <CameraSway />
 
       {buildings.map((b, i) => (
         <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
@@ -220,8 +299,8 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
 
       <EffectComposer>
         <Bloom
-          intensity={0.8}
-          luminanceThreshold={0.6}
+          intensity={1.0}
+          luminanceThreshold={0.5}
           luminanceSmoothing={0.3}
           mipmapBlur
         />
