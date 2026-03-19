@@ -101,6 +101,36 @@ function getGenreStyle(genres: string[]): BuildingStyle {
   return 'modern';
 }
 
+// Genre district definitions
+export const GENRE_DISTRICTS: { name: string; label: string; center: [number, number]; radius: number; keywords: string[] }[] = [
+  { name: 'pop', label: 'POP', center: [0, 0], radius: 25, keywords: ['pop', 'dance pop', 'synth pop', 'k-pop', 'korean pop', 'j-pop', 'latin pop'] },
+  { name: 'rock', label: 'ROCK', center: [40, -30], radius: 22, keywords: ['rock', 'metal', 'heavy metal', 'thrash metal', 'punk', 'punk rock', 'grunge', 'alternative'] },
+  { name: 'hiphop', label: 'HIP-HOP', center: [-35, -25], radius: 22, keywords: ['hip hop', 'hip-hop', 'rap', 'trap', 'r&b', 'neo soul', 'soul'] },
+  { name: 'electronic', label: 'ELECTRONIC', center: [-30, 35], radius: 22, keywords: ['electronic', 'edm', 'house', 'techno', 'synthwave', 'future bass', 'dubstep', 'ambient', 'chillhop'] },
+  { name: 'indie', label: 'INDIE', center: [35, 30], radius: 22, keywords: ['indie', 'folk', 'singer-songwriter', 'indie folk', 'americana', 'country', 'bluegrass'] },
+  { name: 'classical', label: 'CLASSICAL', center: [0, -45], radius: 22, keywords: ['classical', 'jazz', 'orchestral', 'piano', 'blues', 'cello', 'violin'] },
+];
+
+function getDistrict(genres: string[]): typeof GENRE_DISTRICTS[number] {
+  for (const genre of genres) {
+    const lower = genre.toLowerCase();
+    for (const district of GENRE_DISTRICTS) {
+      for (const keyword of district.keywords) {
+        if (lower.includes(keyword) || keyword.includes(lower)) {
+          return district;
+        }
+      }
+    }
+  }
+  return GENRE_DISTRICTS[0]; // default to pop
+}
+
+// Seeded pseudo-random for deterministic placement
+function seededRand(seed: number): number {
+  const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+  return x - Math.floor(x);
+}
+
 export function generateBuildingParams(
   profile: SpotifyProfile,
   index: number
@@ -123,21 +153,20 @@ export function generateBuildingParams(
   const windowGlow = Math.min(1, profile.listeningStreak / 14);
   const style = getGenreStyle(profile.topGenres);
 
-  // City grid layout - proper spacing with streets/gaps
-  const gridCols = 5;
-  const spacing = 16; // wider spacing for streets/blocks/depth
-  const streetWidth = 3; // gap for "streets"
-  const row = Math.floor(index / gridCols);
-  const col = index % gridCols;
+  // Genre district placement - taller buildings closer to center
+  const district = getDistrict(profile.topGenres);
+  const maxHeight = 25;
+  // Normalized height: 1 = tallest, 0 = shortest
+  const heightNorm = (height - 2) / (maxHeight - 2);
+  // Taller buildings get placed closer to center (smaller distance factor)
+  const distanceFactor = (1 - heightNorm) * 0.8 + 0.1; // range [0.1, 0.9]
 
-  // Seeded pseudo-random offsets (deterministic per building)
-  const seed1 = Math.sin(index * 7.3 + 0.5) * 0.5;
-  const seed2 = Math.cos(index * 4.1 + 0.5) * 0.5;
-  const offsetX = seed1 * 1.5;
-  const offsetZ = seed2 * 1.5;
+  // Deterministic random angle and spread within district
+  const angle = seededRand(index * 73 + 17) * Math.PI * 2;
+  const spread = seededRand(index * 137 + 53) * district.radius * distanceFactor;
 
-  const x = (col - gridCols / 2) * (spacing + streetWidth) + offsetX;
-  const z = (row - 2) * (spacing + streetWidth) + offsetZ;
+  const x = district.center[0] + Math.cos(angle) * spread;
+  const z = district.center[1] + Math.sin(angle) * spread;
 
   return {
     height,

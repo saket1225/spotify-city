@@ -1,16 +1,18 @@
 'use client';
 
-import { useRef, useMemo, useCallback } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { useRef, useMemo, useCallback, useState } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Building from './Building';
 import { BuildingParams } from '@/types';
+import { GENRE_DISTRICTS } from '@/lib/buildingGenerator';
 
 interface CityProps {
   buildings: BuildingParams[];
   onBuildingClick: (params: BuildingParams) => void;
+  onIntroComplete?: () => void;
 }
 
 function DarkGround() {
@@ -173,7 +175,42 @@ function DustParticles() {
   );
 }
 
-function SmartOrbitControls() {
+function CinematicIntro({ onComplete }: { onComplete: () => void }) {
+  const { camera } = useThree();
+  const completedRef = useRef(false);
+
+  const curve = useMemo(() => {
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(80, 50, 80),
+      new THREE.Vector3(40, 25, -20),
+      new THREE.Vector3(30, 16, 30),
+    ]);
+  }, []);
+
+  useFrame((state) => {
+    if (completedRef.current) return;
+
+    const elapsed = state.clock.elapsedTime;
+    const duration = 4;
+    const t = Math.min(elapsed / duration, 1);
+
+    // Smooth easing (ease-in-out cubic)
+    const eased = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const point = curve.getPoint(eased);
+    camera.position.copy(point);
+    camera.lookAt(0, 0, 0);
+
+    if (t >= 1) {
+      completedRef.current = true;
+      onComplete();
+    }
+  });
+
+  return null;
+}
+
+function SmartOrbitControls({ enabled = true }: { enabled?: boolean }) {
   const controlsRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
   const autoRotateRef = useRef(true);
 
@@ -188,6 +225,7 @@ function SmartOrbitControls() {
   return (
     <OrbitControls
       ref={controlsRef}
+      enabled={enabled}
       enableDamping
       dampingFactor={0.05}
       minDistance={8}
@@ -200,10 +238,45 @@ function SmartOrbitControls() {
   );
 }
 
-export default function City({ buildings, onBuildingClick }: CityProps) {
+function DistrictLabels() {
+  return (
+    <>
+      {GENRE_DISTRICTS.map((district) => (
+        <Html
+          key={district.name}
+          position={[district.center[0], 15, district.center[1]]}
+          center
+          style={{ pointerEvents: 'none' }}
+        >
+          <div style={{
+            color: 'rgba(29, 185, 84, 0.55)',
+            fontFamily: '"Press Start 2P", "Courier New", monospace',
+            fontSize: '11px',
+            fontWeight: 700,
+            letterSpacing: '0.25em',
+            textShadow: '0 0 12px rgba(29, 185, 84, 0.3)',
+            whiteSpace: 'nowrap',
+            userSelect: 'none',
+          }}>
+            {district.label}
+          </div>
+        </Html>
+      ))}
+    </>
+  );
+}
+
+export default function City({ buildings, onBuildingClick, onIntroComplete }: CityProps) {
+  const [introComplete, setIntroComplete] = useState(false);
+
+  const handleIntroComplete = useCallback(() => {
+    setIntroComplete(true);
+    onIntroComplete?.();
+  }, [onIntroComplete]);
+
   return (
     <Canvas
-      camera={{ position: [30, 16, 30], fov: 50 }}
+      camera={{ position: [80, 50, 80], fov: 50 }}
       style={{ width: '100%', height: '100%' }}
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
@@ -232,7 +305,10 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
         <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
       ))}
 
-      <SmartOrbitControls />
+      <DistrictLabels />
+
+      {!introComplete && <CinematicIntro onComplete={handleIntroComplete} />}
+      <SmartOrbitControls enabled={introComplete} />
 
       <EffectComposer>
         <Bloom
