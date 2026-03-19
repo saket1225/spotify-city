@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, MeshReflectorMaterial } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Building from './Building';
@@ -13,22 +13,11 @@ interface CityProps {
   onBuildingClick: (params: BuildingParams) => void;
 }
 
-function ReflectiveGround() {
+function DarkGround() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
       <planeGeometry args={[200, 200]} />
-      <MeshReflectorMaterial
-        mirror={0.25}
-        resolution={512}
-        mixBlur={6}
-        mixStrength={0.8}
-        roughness={0.85}
-        depthScale={1.0}
-        minDepthThreshold={0.3}
-        maxDepthThreshold={1.2}
-        color="#0a0a12"
-        metalness={0.15}
-      />
+      <meshStandardMaterial color="#0a0a12" roughness={0.9} metalness={0.1} />
     </mesh>
   );
 }
@@ -87,32 +76,27 @@ function AnimatedGrid() {
 }
 
 function FloatingParticles() {
-  const count = 200;
+  const count = 80;
   const ref = useRef<THREE.Points>(null);
 
-  const [positions, speeds, sizes] = useMemo(() => {
+  const [positions, speeds] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const spd = new Float32Array(count);
-    const sz = new Float32Array(count);
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 80;
       pos[i * 3 + 1] = Math.random() * 35;
       pos[i * 3 + 2] = (Math.random() - 0.5) * 80;
       spd[i] = 0.01 + Math.random() * 0.04;
-      sz[i] = 0.06 + Math.random() * 0.14;
     }
-    return [pos, spd, sz];
+    return [pos, spd];
   }, []);
 
-  useFrame((state) => {
+  useFrame(() => {
     if (!ref.current) return;
     const posAttr = ref.current.geometry.attributes.position;
     const arr = posAttr.array as Float32Array;
-    const t = state.clock.elapsedTime;
     for (let i = 0; i < count; i++) {
       arr[i * 3 + 1] += speeds[i];
-      // Gentle horizontal drift
-      arr[i * 3] += Math.sin(t * 0.2 + i) * 0.003;
       if (arr[i * 3 + 1] > 40) {
         arr[i * 3 + 1] = 0;
         arr[i * 3] = (Math.random() - 0.5) * 80;
@@ -142,9 +126,8 @@ function FloatingParticles() {
   );
 }
 
-// Secondary dust particles for depth
 function DustParticles() {
-  const count = 150;
+  const count = 50;
   const ref = useRef<THREE.Points>(null);
 
   const positions = useMemo(() => {
@@ -190,45 +173,6 @@ function DustParticles() {
   );
 }
 
-function AudioWavePlane() {
-  const ref = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    if (!ref.current) return;
-    const geo = ref.current.geometry as THREE.PlaneGeometry;
-    const pos = geo.attributes.position;
-    const t = state.clock.elapsedTime;
-
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const y = pos.getY(i);
-      const dist = Math.sqrt(x * x + y * y);
-      const wave = Math.sin(dist * 0.3 - t * 1.5) * 0.15 *
-                   Math.max(0, 1 - dist / 40);
-      pos.setZ(i, wave);
-    }
-    pos.needsUpdate = true;
-  });
-
-  return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-      <planeGeometry args={[80, 80, 60, 60]} />
-      <meshBasicMaterial color="#1DB954" wireframe transparent opacity={0.03} />
-    </mesh>
-  );
-}
-
-// Subtle camera sway for cinematic feel
-function CameraSway() {
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    // Very subtle sway
-    state.camera.position.x += Math.sin(t * 0.05) * 0.003;
-    state.camera.position.y += Math.cos(t * 0.03) * 0.002;
-  });
-  return null;
-}
-
 function SmartOrbitControls() {
   const controlsRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
   const autoRotateRef = useRef(true);
@@ -261,37 +205,28 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
     <Canvas
       camera={{ position: [30, 16, 30], fov: 50 }}
       style={{ width: '100%', height: '100%' }}
-      shadows
       gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
     >
       <color attach="background" args={['#06060F']} />
       <fog attach="fog" args={['#08081A', 25, 85]} />
 
       <ambientLight intensity={0.15} />
-      {/* Sky haze for atmosphere */}
       <hemisphereLight args={['#1a1a3a', '#080810', 0.15]} />
       <directionalLight
         position={[15, 25, 10]}
         intensity={0.5}
         color="#e8e0ff"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
       />
       <pointLight position={[0, 20, 0]} intensity={0.4} color="#1DB954" distance={60} />
       <pointLight position={[-20, 8, -20]} intensity={0.3} color="#4169E1" distance={40} />
       <pointLight position={[20, 8, 20]} intensity={0.3} color="#FF69B4" distance={40} />
-      {/* Low rim light for dramatic uplighting */}
-      <pointLight position={[0, 1, 0]} intensity={0.15} color="#1DB954" distance={50} />
 
-      <Stars radius={120} depth={60} count={4000} factor={5} fade speed={0.3} />
+      <Stars radius={120} depth={60} count={1500} factor={5} fade speed={0.3} />
 
-      <ReflectiveGround />
+      <DarkGround />
       <AnimatedGrid />
-      <AudioWavePlane />
       <FloatingParticles />
       <DustParticles />
-      <CameraSway />
 
       {buildings.map((b, i) => (
         <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
@@ -305,6 +240,8 @@ export default function City({ buildings, onBuildingClick }: CityProps) {
           luminanceThreshold={0.3}
           luminanceSmoothing={0.4}
           mipmapBlur
+          width={512}
+          height={512}
         />
       </EffectComposer>
     </Canvas>

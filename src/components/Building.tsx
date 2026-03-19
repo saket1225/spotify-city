@@ -45,12 +45,8 @@ export default function Building({ params, onClick }: BuildingProps) {
   const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile, isCurrentUser } = params;
   const config = getStyleConfig(style);
 
-  const glowRef = useRef(0);
   const seed = position[0] * 73 + position[2] * 137;
   const buildingVariant = seededRandom(seed);
-
-  // Blinking windows state
-  const windowBlinkRef = useRef<Float32Array | null>(null);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -59,8 +55,6 @@ export default function Building({ params, onClick }: BuildingProps) {
 
     const targetScale = hovered ? 1.04 : 1;
     groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.08);
-
-    glowRef.current = 0.5 + Math.sin(t * 1.5 + position[0]) * 0.3;
   });
 
   // Generate footprint geometry pieces
@@ -69,23 +63,17 @@ export default function Building({ params, onClick }: BuildingProps) {
 
     switch (config.footprint) {
       case 'l-shape': {
-        // Main block
         pieces.push({ x: 0, z: 0, w: width, d: depth, isMain: true });
-        // L extension
         pieces.push({ x: width * 0.35, z: depth * 0.35, w: width * 0.55, d: depth * 0.55, isMain: false });
         break;
       }
       case 't-shape': {
-        // Main tall block
         pieces.push({ x: 0, z: 0, w: width * 0.6, d: depth, isMain: true });
-        // Cross bar (shorter)
         pieces.push({ x: 0, z: 0, w: width * 1.3, d: depth * 0.45, isMain: false });
         break;
       }
       case 'cluster': {
-        // Main building
         pieces.push({ x: 0, z: 0, w: width * 0.7, d: depth * 0.7, isMain: true });
-        // Smaller attached buildings
         pieces.push({ x: width * 0.4, z: depth * 0.15, w: width * 0.45, d: depth * 0.5, isMain: false });
         pieces.push({ x: -width * 0.2, z: -depth * 0.35, w: width * 0.4, d: depth * 0.4, isMain: false });
         break;
@@ -121,7 +109,6 @@ export default function Building({ params, onClick }: BuildingProps) {
       // Body segments with taper
       for (let i = 1; i < segCount; i++) {
         let scale = Math.pow(config.taperFactor, i);
-        // Extra taper for tapered footprint
         if (config.footprint === 'tapered' && piece.isMain) {
           scale *= Math.pow(0.96, i);
         }
@@ -140,13 +127,12 @@ export default function Building({ params, onClick }: BuildingProps) {
     return allSegs;
   }, [height, width, depth, config, footprintPieces, buildingVariant]);
 
-  const windows = useMemo(() => {
-    const wins: { pos: [number, number, number]; rot: [number, number, number]; blinkId: number }[] = [];
-    let blinkId = 0;
+  // Generate static window positions and merge into a single geometry
+  const windowGeometry = useMemo(() => {
+    const windowPositions: { pos: [number, number, number]; rot: [number, number, number] }[] = [];
 
     for (const seg of segments) {
       if (seg.isCylinder) {
-        // Cylindrical windows around circumference
         const radius = seg.w / 2;
         const rows = Math.max(1, Math.floor(seg.h / 1.0));
         const cols = Math.max(4, Math.floor(radius * Math.PI * 2 / 0.7));
@@ -156,7 +142,7 @@ export default function Building({ params, onClick }: BuildingProps) {
             const angle = (c / cols) * Math.PI * 2;
             const wx = seg.x + Math.cos(angle) * (radius + 0.01);
             const wz = seg.z + Math.sin(angle) * (radius + 0.01);
-            wins.push({ pos: [wx, y, wz], rot: [0, -angle + Math.PI / 2, 0], blinkId: blinkId++ });
+            windowPositions.push({ pos: [wx, y, wz], rot: [0, -angle + Math.PI / 2, 0] });
           }
         }
         continue;
@@ -170,30 +156,72 @@ export default function Building({ params, onClick }: BuildingProps) {
         const y = seg.y - seg.h / 2 + 0.4 + r * (seg.h / rows);
         for (let c = 0; c < colsFront; c++) {
           const x = seg.x - seg.w / 2 + 0.35 + c * ((seg.w - 0.4) / Math.max(1, colsFront - 1 || 1));
-          wins.push({ pos: [x, y, seg.z + seg.d / 2 + 0.01], rot: [0, 0, 0], blinkId: blinkId++ });
-          wins.push({ pos: [x, y, seg.z - seg.d / 2 - 0.01], rot: [0, Math.PI, 0], blinkId: blinkId++ });
+          windowPositions.push({ pos: [x, y, seg.z + seg.d / 2 + 0.01], rot: [0, 0, 0] });
+          windowPositions.push({ pos: [x, y, seg.z - seg.d / 2 - 0.01], rot: [0, Math.PI, 0] });
         }
         for (let c = 0; c < colsSide; c++) {
           const z = seg.z - seg.d / 2 + 0.35 + c * ((seg.d - 0.4) / Math.max(1, colsSide - 1 || 1));
-          wins.push({ pos: [seg.x + seg.w / 2 + 0.01, y, z], rot: [0, Math.PI / 2, 0], blinkId: blinkId++ });
-          wins.push({ pos: [seg.x - seg.w / 2 - 0.01, y, z], rot: [0, -Math.PI / 2, 0], blinkId: blinkId++ });
+          windowPositions.push({ pos: [seg.x + seg.w / 2 + 0.01, y, z], rot: [0, Math.PI / 2, 0] });
+          windowPositions.push({ pos: [seg.x - seg.w / 2 - 0.01, y, z], rot: [0, -Math.PI / 2, 0] });
         }
       }
     }
 
-    return wins;
-  }, [segments]);
+    // Merge all windows into a single BufferGeometry
+    const winW = 0.25;
+    const winH = 0.35;
+    const vertCount = windowPositions.length * 4;
+    const triCount = windowPositions.length * 2;
+    const positions = new Float32Array(vertCount * 3);
+    const indices = new Uint32Array(triCount * 3);
 
-  // Initialize blink timings per window
-  const windowBlinkTimings = useMemo(() => {
-    const totalWindows = windows.length;
-    const timings = new Float32Array(totalWindows);
-    for (let i = 0; i < totalWindows; i++) {
-      timings[i] = seededRandom(seed + i * 31) * 100; // phase offset
+    const halfW = winW / 2;
+    const halfH = winH / 2;
+    // Corners of window pane in local space (facing +Z)
+    const corners = [
+      [-halfW, -halfH, 0],
+      [halfW, -halfH, 0],
+      [halfW, halfH, 0],
+      [-halfW, halfH, 0],
+    ];
+
+    const euler = new THREE.Euler();
+    const quat = new THREE.Quaternion();
+    const vec = new THREE.Vector3();
+
+    for (let i = 0; i < windowPositions.length; i++) {
+      const { pos, rot } = windowPositions[i];
+      euler.set(rot[0], rot[1], rot[2]);
+      quat.setFromEuler(euler);
+
+      for (let j = 0; j < 4; j++) {
+        vec.set(corners[j][0], corners[j][1], corners[j][2]);
+        vec.applyQuaternion(quat);
+        vec.x += pos[0];
+        vec.y += pos[1];
+        vec.z += pos[2];
+        const idx = (i * 4 + j) * 3;
+        positions[idx] = vec.x;
+        positions[idx + 1] = vec.y;
+        positions[idx + 2] = vec.z;
+      }
+
+      const base = i * 4;
+      const triBase = i * 6;
+      indices[triBase] = base;
+      indices[triBase + 1] = base + 1;
+      indices[triBase + 2] = base + 2;
+      indices[triBase + 3] = base;
+      indices[triBase + 4] = base + 2;
+      indices[triBase + 5] = base + 3;
     }
-    windowBlinkRef.current = timings;
-    return timings;
-  }, [windows.length, seed]);
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setIndex(new THREE.BufferAttribute(indices, 1));
+    geo.computeVertexNormals();
+    return geo;
+  }, [segments]);
 
   const crown = useMemo(() => {
     const mainHeight = height;
@@ -211,7 +239,6 @@ export default function Building({ params, onClick }: BuildingProps) {
               <sphereGeometry args={[0.1, 8, 8]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1} />
             </mesh>
-            {/* Second shorter antenna */}
             <mesh position={[width * 0.25, 0.8, 0]}>
               <cylinderGeometry args={[0.02, 0.04, 1.6, 6]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.3} />
@@ -225,7 +252,6 @@ export default function Building({ params, onClick }: BuildingProps) {
               <coneGeometry args={[width * 0.25, 4, 6]} />
               <meshPhysicalMaterial color={secondaryColor} roughness={0.3} metalness={0.7} />
             </mesh>
-            {/* Flying buttress-like supports */}
             {[0, 1, 2, 3].map((i) => (
               <mesh key={`buttress-${i}`} position={[Math.cos(i * Math.PI / 2) * width * 0.3, 0.5, Math.sin(i * Math.PI / 2) * depth * 0.3]} rotation={[0, i * Math.PI / 2, Math.PI / 6]}>
                 <boxGeometry args={[0.08, 1.2, 0.08]} />
@@ -246,17 +272,14 @@ export default function Building({ params, onClick }: BuildingProps) {
       case 'helipad':
         return (
           <group position={[0, topY, 0]}>
-            {/* Flat roof */}
             <mesh position={[0, 0.05, 0]}>
               <boxGeometry args={[width * 1.1, 0.1, depth * 1.1]} />
               <meshPhysicalMaterial color={secondaryColor} roughness={0.5} metalness={0.5} />
             </mesh>
-            {/* Helipad circle */}
             <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[width * 0.2, width * 0.35, 24]} />
               <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} side={THREE.DoubleSide} />
             </mesh>
-            {/* Corner lights */}
             {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([xd, zd], i) => (
               <mesh key={`hpad-${i}`} position={[xd * width * 0.45, 0.2, zd * depth * 0.45]}>
                 <sphereGeometry args={[0.06, 6, 6]} />
@@ -294,7 +317,6 @@ export default function Building({ params, onClick }: BuildingProps) {
                 </mesh>
               ))
             )}
-            {/* Center turret */}
             <mesh position={[0, 0.6, 0]}>
               <cylinderGeometry args={[0.15, 0.2, 1.2, 8]} />
               <meshPhysicalMaterial color={secondaryColor} roughness={0.6} metalness={0.4} />
@@ -321,9 +343,6 @@ export default function Building({ params, onClick }: BuildingProps) {
   const emissiveColor = accentColor;
   const baseEmissiveIntensity = style === 'neon-tower' ? windowGlow * 4 : windowGlow * 3;
 
-  // Pulsing glow - some buildings pulse subtly
-  const shouldPulse = buildingVariant > 0.4;
-
   return (
     <group
       ref={groupRef}
@@ -336,7 +355,7 @@ export default function Building({ params, onClick }: BuildingProps) {
       {segments.map((seg, i) => (
         <group key={`seg-group-${i}`}>
           {seg.isCylinder ? (
-            <mesh position={[seg.x, seg.y, seg.z]} castShadow>
+            <mesh position={[seg.x, seg.y, seg.z]}>
               <cylinderGeometry args={[seg.w / 2, seg.w / 2, seg.h, 24]} />
               <meshPhysicalMaterial
                 color={i === 0 ? secondaryColor : primaryColor}
@@ -349,7 +368,7 @@ export default function Building({ params, onClick }: BuildingProps) {
               />
             </mesh>
           ) : (
-            <mesh position={[seg.x, seg.y, seg.z]} castShadow>
+            <mesh position={[seg.x, seg.y, seg.z]}>
               <boxGeometry args={[seg.w, seg.h, seg.d]} />
               <meshPhysicalMaterial
                 color={i === 0 ? secondaryColor : primaryColor}
@@ -365,59 +384,45 @@ export default function Building({ params, onClick }: BuildingProps) {
         </group>
       ))}
 
-      {/* Edge wireframe overlay for definition */}
-      {segments.map((seg, i) => (
+      {/* Edge wireframe overlay - only when hovered */}
+      {hovered && segments.map((seg, i) => (
         seg.isCylinder ? (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <cylinderGeometry args={[seg.w / 2 + 0.01, seg.w / 2 + 0.01, seg.h + 0.02, 24]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.12} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
           </mesh>
         ) : (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <boxGeometry args={[seg.w + 0.02, seg.h + 0.02, seg.d + 0.02]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.12} />
+            <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
           </mesh>
         )
       ))}
 
-      {/* Windows with emissive glow and blinking */}
-      {windows.map((w, i) => {
-        // Some windows blink on/off
-        const blinkPhase = windowBlinkTimings[w.blinkId % windowBlinkTimings.length];
-        const shouldBlink = blinkPhase > 80; // ~20% of windows blink
-
-        return (
-          <WindowPane
-            key={`win-${i}`}
-            position={w.pos}
-            rotation={w.rot}
-            emissiveColor={emissiveColor}
-            baseIntensity={baseEmissiveIntensity}
-            shouldBlink={shouldBlink}
-            blinkPhase={blinkPhase}
-            shouldPulse={shouldPulse}
-            seed={seed}
-          />
-        );
-      })}
+      {/* All windows as a single merged mesh - static emissive, no per-frame animation */}
+      <mesh geometry={windowGeometry}>
+        <meshStandardMaterial
+          color="#ffffff"
+          emissive={emissiveColor}
+          emissiveIntensity={baseEmissiveIntensity}
+          transparent
+          opacity={0.9}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
 
       {/* Crown */}
       {crown}
 
-      {/* Base accent lights */}
-      <pointLight position={[width * 0.6, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
-      <pointLight position={[-width * 0.6, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
-      <pointLight position={[0, 0.3, depth * 0.6]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
+      {/* Single accent light per building */}
+      <pointLight position={[0, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
 
-      {/* Neon edge glow on all buildings */}
-      <mesh position={[0, height * 0.5, 0]}>
-        <boxGeometry args={[width + 0.2, height + 0.2, depth + 0.2]} />
-        <meshBasicMaterial color={accentColor} wireframe transparent opacity={hovered ? 0.3 : 0.1} />
-      </mesh>
-
-      {/* Pulsing ambient glow around building base */}
-      {shouldPulse && (
-        <PulsingGlow color={primaryColor} width={width} depth={depth} seed={seed} />
+      {/* Neon edge glow - only when hovered */}
+      {hovered && (
+        <mesh position={[0, height * 0.5, 0]}>
+          <boxGeometry args={[width + 0.2, height + 0.2, depth + 0.2]} />
+          <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
+        </mesh>
       )}
 
       {/* Current user beacon */}
@@ -472,54 +477,6 @@ export default function Building({ params, onClick }: BuildingProps) {
   );
 }
 
-// Separate component for windows so they can animate independently
-function WindowPane({ position, rotation, emissiveColor, baseIntensity, shouldBlink, blinkPhase, shouldPulse, seed }: {
-  position: [number, number, number];
-  rotation: [number, number, number];
-  emissiveColor: string;
-  baseIntensity: number;
-  shouldBlink: boolean;
-  blinkPhase: number;
-  shouldPulse: boolean;
-  seed: number;
-}) {
-  const matRef = useRef<THREE.MeshStandardMaterial>(null);
-
-  useFrame((state) => {
-    if (!matRef.current) return;
-    const t = state.clock.elapsedTime;
-    let intensity = baseIntensity;
-
-    if (shouldBlink) {
-      // Blink: occasionally turn off
-      const blink = Math.sin(t * 0.3 + blinkPhase) + Math.sin(t * 0.7 + blinkPhase * 1.3);
-      if (blink < -1.2) {
-        intensity = 0.05;
-      }
-    }
-
-    if (shouldPulse) {
-      intensity *= 0.8 + Math.sin(t * 0.8 + seed * 0.1) * 0.2;
-    }
-
-    matRef.current.emissiveIntensity = intensity;
-  });
-
-  return (
-    <mesh position={position} rotation={rotation}>
-      <planeGeometry args={[0.25, 0.35]} />
-      <meshStandardMaterial
-        ref={matRef}
-        color="#ffffff"
-        emissive={emissiveColor}
-        emissiveIntensity={baseIntensity}
-        transparent
-        opacity={0.9}
-      />
-    </mesh>
-  );
-}
-
 // Animated beacon for the current user's building
 function UserBeacon({ height, width, depth }: { height: number; width: number; depth: number }) {
   const ringRef = useRef<THREE.Mesh>(null);
@@ -540,39 +497,15 @@ function UserBeacon({ height, width, depth }: { height: number; width: number; d
 
   return (
     <>
-      {/* Rotating ring at base */}
       <mesh ref={ringRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[radius, radius + 0.15, 48]} />
         <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={2} transparent opacity={0.7} side={THREE.DoubleSide} />
       </mesh>
-      {/* Vertical beam */}
       <mesh position={[0, height / 2, 0]}>
         <cylinderGeometry args={[0.04, 0.04, height + 6, 8]} />
         <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={1.5} transparent opacity={0.25} />
       </mesh>
-      {/* Bright point light */}
       <pointLight ref={lightRef} position={[0, height + 2, 0]} color="#1DB954" intensity={2} distance={25} />
     </>
-  );
-}
-
-// Pulsing glow effect around building base
-function PulsingGlow({ color, width, depth, seed }: { color: string; width: number; depth: number; seed: number }) {
-  const ref = useRef<THREE.PointLight>(null);
-
-  useFrame((state) => {
-    if (!ref.current) return;
-    const t = state.clock.elapsedTime;
-    ref.current.intensity = 0.3 + Math.sin(t * 1.2 + seed * 0.5) * 0.25;
-  });
-
-  return (
-    <pointLight
-      ref={ref}
-      position={[0, 1, 0]}
-      color={color}
-      intensity={0.3}
-      distance={Math.max(width, depth) * 3}
-    />
   );
 }
