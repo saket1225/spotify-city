@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signIn } from 'next-auth/react';
 import { getSampleBuildings } from '@/lib/sampleData';
@@ -8,7 +8,7 @@ import { generateBuildingParams } from '@/lib/buildingGenerator';
 import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import LoginButton from '@/components/LoginButton';
-import SearchBar from '@/components/SearchBar';
+import SearchBar, { SearchBarHandle } from '@/components/SearchBar';
 import ShareCard from '@/components/ShareCard';
 import Leaderboard from '@/components/Leaderboard';
 import CompareMode from '@/components/CompareMode';
@@ -109,7 +109,6 @@ function SkylineLoader() {
     return () => clearInterval(timer);
   }, []);
 
-  // Generate deterministic building silhouettes
   const buildings = useMemo(() => {
     const b: { x: number; w: number; maxH: number }[] = [];
     for (let i = 0; i < 28; i++) {
@@ -127,7 +126,6 @@ function SkylineLoader() {
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050510]">
       <div className="flex flex-col items-center gap-8">
-        {/* Skyline silhouette being built progressively */}
         <div className="relative w-[380px] h-[120px] overflow-hidden">
           <svg width="380" height="120" viewBox="0 0 390 120">
             {buildings.map((b, i) => {
@@ -157,7 +155,6 @@ function SkylineLoader() {
                 </rect>
               );
             })}
-            {/* Ground line */}
             <line x1="0" y1="119" x2="390" y2="119" stroke="#1DB954" strokeWidth="1" opacity="0.4" />
           </svg>
         </div>
@@ -192,7 +189,6 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
       style={{ background: 'radial-gradient(ellipse at center, rgba(5,5,16,0.7) 0%, rgba(5,5,16,0.92) 70%)' }}
     >
       <div className="flex flex-col items-center gap-6 px-6 text-center">
-        {/* Title */}
         <h1
           className="font-pixel text-5xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
           style={{
@@ -202,12 +198,10 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
           SPOTIFY CITY
         </h1>
 
-        {/* Tagline */}
         <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md">
           See your music taste as a city skyline
         </p>
 
-        {/* Sign in button */}
         <button
           onClick={handleSignIn}
           className="mt-6 px-10 py-4 rounded-full text-base sm:text-lg font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
@@ -220,7 +214,6 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
           Sign in with Spotify
         </button>
 
-        {/* Explore without signing in */}
         <button
           onClick={() => { setFading(true); setTimeout(() => setVisible(false), 600); onSignIn(); }}
           className="mt-2 text-gray-500 text-xs tracking-wider hover:text-gray-300 transition-colors"
@@ -228,7 +221,6 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
           or explore the demo city
         </button>
 
-        {/* Credit */}
         <p className="mt-10 text-gray-600 text-xs tracking-wider">
           Built by <span className="text-gray-500">@codanium_</span>
         </p>
@@ -241,6 +233,7 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [genreFilter, setGenreFilter] = useState<string | null>(null);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [shareCardBuilding, setShareCardBuilding] = useState<BuildingParams | null>(null);
@@ -248,6 +241,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(true);
   const [userProfile, setUserProfile] = useState<SpotifyProfile | null>(null);
+  const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
+
+  const searchRef = useRef<SearchBarHandle>(null);
+  const controlsRef = useRef<{ rotate: (dx: number, dy: number) => void; reset: () => void } | null>(null);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -271,35 +268,69 @@ export default function Home() {
       ...generateBuildingParams(userProfile, 0),
       isCurrentUser: true,
     };
-    // Re-index sample buildings starting at 1 so positions don't overlap
     const reindexed = sampleBuildings.map((b, i) => ({
       ...generateBuildingParams(b.profile, i + 1),
     }));
     return [userBuilding, ...reindexed];
   }, [userProfile, sampleBuildings]);
 
-  const buildings = useMemo(() => {
-    if (!searchQuery.trim()) return allBuildings;
+  // Search matching - returns set of matching IDs (null = no filter active)
+  const matchingIds = useMemo(() => {
+    const hasSearch = searchQuery.trim().length > 0;
+    const hasGenre = genreFilter !== null;
+    if (!hasSearch && !hasGenre) return null;
+
     const q = searchQuery.toLowerCase();
-    return allBuildings.filter(
-      (b) =>
-        b.profile.displayName.toLowerCase().includes(q) ||
-        b.profile.topGenres.some((g) => g.toLowerCase().includes(q)) ||
-        b.profile.topArtists.some((a) => a.name.toLowerCase().includes(q))
-    );
-  }, [allBuildings, searchQuery]);
+    const ids = new Set<string>();
+
+    for (const b of allBuildings) {
+      let matches = false;
+
+      if (hasSearch) {
+        matches =
+          b.profile.displayName.toLowerCase().includes(q) ||
+          b.profile.topGenres.some((g) => g.toLowerCase().includes(q)) ||
+          b.profile.topArtists.some((a) => a.name.toLowerCase().includes(q));
+      }
+
+      if (hasGenre && !hasSearch) {
+        const gLower = genreFilter!.toLowerCase();
+        matches = b.profile.topGenres.some((g) => g.toLowerCase().includes(gLower));
+      }
+
+      if (matches) ids.add(b.profile.id);
+    }
+    return ids;
+  }, [allBuildings, searchQuery, genreFilter]);
+
+  // All buildings always rendered, dimmed/highlighted based on search
+  const buildings = useMemo(() => {
+    if (!matchingIds) return allBuildings;
+    return allBuildings.map((b) => ({
+      ...b,
+      dimmed: !matchingIds.has(b.profile.id),
+      highlighted: matchingIds.has(b.profile.id),
+    }));
+  }, [allBuildings, matchingIds]);
 
   // Get rank for a building (by listening hours)
-  const getRank = (building: BuildingParams): number => {
+  const getRank = useCallback((building: BuildingParams): number => {
     const sorted = [...allBuildings].sort(
       (a, b) => b.profile.estimatedListeningHours - a.profile.estimatedListeningHours
     );
     return sorted.findIndex(b => b.profile.id === building.profile.id) + 1;
-  };
+  }, [allBuildings]);
 
   const handleBuildingClick = (building: BuildingParams) => {
     setSelectedBuilding(building);
   };
+
+  const handleVisitBuilding = useCallback(() => {
+    if (!selectedBuilding) return;
+    const pos = selectedBuilding.position;
+    setFocusPosition([pos[0], selectedBuilding.height / 2, pos[2]]);
+    setSelectedBuilding(null);
+  }, [selectedBuilding]);
 
   const handleShareFromProfile = () => {
     if (selectedBuilding) {
@@ -318,6 +349,54 @@ export default function Home() {
   useEffect(() => {
     if (status === 'authenticated') setHeroVisible(false);
   }, [status]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA';
+
+      // Escape - close any open panel
+      if (e.key === 'Escape') {
+        if (selectedBuilding) { setSelectedBuilding(null); return; }
+        if (leaderboardOpen) { setLeaderboardOpen(false); return; }
+        if (compareOpen) { setCompareOpen(false); return; }
+        if (inviteOpen) { setInviteOpen(false); return; }
+        if (shareCardBuilding) { setShareCardBuilding(null); return; }
+        if (isInput) { (e.target as HTMLElement).blur(); return; }
+      }
+
+      // / to focus search
+      if (e.key === '/' && !isInput) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+
+      // Space to reset camera
+      if (e.key === ' ' && !isInput) {
+        e.preventDefault();
+        controlsRef.current?.reset();
+        setFocusPosition(null);
+        return;
+      }
+
+      // Arrow keys to rotate camera
+      if (!isInput && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+        e.preventDefault();
+        const speed = 0.05;
+        switch (e.key) {
+          case 'ArrowLeft': controlsRef.current?.rotate(-speed, 0); break;
+          case 'ArrowRight': controlsRef.current?.rotate(speed, 0); break;
+          case 'ArrowUp': controlsRef.current?.rotate(0, -speed); break;
+          case 'ArrowDown': controlsRef.current?.rotate(0, speed); break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedBuilding, leaderboardOpen, compareOpen, inviteOpen, shareCardBuilding]);
 
   return (
     <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050510]">
@@ -338,9 +417,9 @@ export default function Home() {
             <TypewriterSubtitle />
           </div>
 
-          {/* Center: Search */}
+          {/* Center: Search with genre chips */}
           <div className="hidden sm:block flex-1 max-w-sm mx-4">
-            <SearchBar onSearch={setSearchQuery} />
+            <SearchBar ref={searchRef} onSearch={setSearchQuery} onGenreFilter={setGenreFilter} showChips />
           </div>
 
           {/* Right: Login */}
@@ -351,13 +430,18 @@ export default function Home() {
 
         {/* Mobile search - below header on small screens */}
         <div className="sm:hidden px-4 pb-3">
-          <SearchBar onSearch={setSearchQuery} />
+          <SearchBar onSearch={setSearchQuery} onGenreFilter={setGenreFilter} showChips />
         </div>
       </header>
 
       {/* 3D City - full viewport */}
       <main className="fixed inset-0">
-        <City buildings={buildings} onBuildingClick={handleBuildingClick} />
+        <City
+          buildings={buildings}
+          onBuildingClick={handleBuildingClick}
+          focusPosition={focusPosition}
+          controlsRef={controlsRef}
+        />
       </main>
 
       {/* Building count */}
@@ -370,12 +454,33 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Keyboard hints */}
+      <div className="fixed bottom-3 right-20 sm:bottom-5 sm:right-24 z-10 hidden sm:flex gap-1.5 items-center">
+        {[
+          { key: '/', label: 'Search' },
+          { key: 'Space', label: 'Reset' },
+          { key: 'Esc', label: 'Close' },
+          { key: '←→↑↓', label: 'Rotate' },
+        ].map(({ key, label }) => (
+          <div key={key} className="flex items-center gap-1">
+            <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono text-gray-500 bg-white/5 border border-white/10">
+              {key}
+            </kbd>
+            <span className="text-[9px] text-gray-600">{label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Floating Nav */}
       <CityNav
-        onResetCamera={() => {}}
+        onResetCamera={() => {
+          controlsRef.current?.reset();
+          setFocusPosition(null);
+        }}
         onFindMyBuilding={() => {
           const myBuilding = allBuildings.find((b) => b.isCurrentUser);
           if (myBuilding) {
+            setFocusPosition([myBuilding.position[0], myBuilding.height / 2, myBuilding.position[2]]);
             setSelectedBuilding(myBuilding);
           } else if (allBuildings.length > 0) {
             setSelectedBuilding(allBuildings[0]);
@@ -398,8 +503,11 @@ export default function Home() {
       {selectedBuilding && (
         <ProfileCard
           profile={selectedBuilding.profile}
+          buildingColor={selectedBuilding.primaryColor}
+          rank={getRank(selectedBuilding)}
           onClose={() => setSelectedBuilding(null)}
           onShare={handleShareFromProfile}
+          onVisitBuilding={handleVisitBuilding}
           allBuildings={allBuildings}
         />
       )}
