@@ -33,7 +33,6 @@ function getStyleConfig(style: BuildingStyle) {
   }
 }
 
-// Deterministic hash from position for consistent randomness
 function seededRandom(seed: number) {
   const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
   return x - Math.floor(x);
@@ -50,6 +49,14 @@ export default function Building({ params, onClick }: BuildingProps) {
 
   const opacityRef = useRef(1);
 
+  // For current user: tint toward green
+  const effectivePrimary = isCurrentUser
+    ? '#' + new THREE.Color(primaryColor).lerp(new THREE.Color('#1DB954'), 0.25).getHexString()
+    : primaryColor;
+  const effectiveAccent = isCurrentUser
+    ? '#' + new THREE.Color(accentColor).lerp(new THREE.Color('#1DB954'), 0.3).getHexString()
+    : accentColor;
+
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
@@ -60,7 +67,6 @@ export default function Building({ params, onClick }: BuildingProps) {
 
     groupRef.current.position.y = Math.sin(t * 0.4 + position[0] * 0.3) * 0.06;
 
-    // Smooth opacity for dimming
     const targetOpacity = dimmed ? 0.15 : 1;
     opacityRef.current += (targetOpacity - opacityRef.current) * 0.06;
 
@@ -76,108 +82,77 @@ export default function Building({ params, onClick }: BuildingProps) {
     });
   });
 
-  // Generate footprint geometry pieces
   const footprintPieces = useMemo(() => {
     const pieces: { x: number; z: number; w: number; d: number; isMain: boolean }[] = [];
-
     switch (config.footprint) {
-      case 'l-shape': {
+      case 'l-shape':
         pieces.push({ x: 0, z: 0, w: width, d: depth, isMain: true });
         pieces.push({ x: width * 0.35, z: depth * 0.35, w: width * 0.55, d: depth * 0.55, isMain: false });
         break;
-      }
-      case 't-shape': {
+      case 't-shape':
         pieces.push({ x: 0, z: 0, w: width * 0.6, d: depth, isMain: true });
         pieces.push({ x: 0, z: 0, w: width * 1.3, d: depth * 0.45, isMain: false });
         break;
-      }
-      case 'cluster': {
+      case 'cluster':
         pieces.push({ x: 0, z: 0, w: width * 0.7, d: depth * 0.7, isMain: true });
         pieces.push({ x: width * 0.4, z: depth * 0.15, w: width * 0.45, d: depth * 0.5, isMain: false });
         pieces.push({ x: -width * 0.2, z: -depth * 0.35, w: width * 0.4, d: depth * 0.4, isMain: false });
         break;
-      }
-      default: {
+      default:
         pieces.push({ x: 0, z: 0, w: width, d: depth, isMain: true });
         break;
-      }
     }
     return pieces;
   }, [width, depth, config.footprint]);
 
   const segments = useMemo(() => {
     const allSegs: { y: number; h: number; w: number; d: number; x: number; z: number; isCylinder: boolean; segIndex: number; segTotal: number }[] = [];
-
     for (const piece of footprintPieces) {
       const pieceHeight = piece.isMain ? height : height * (0.4 + buildingVariant * 0.35);
       const segCount = piece.isMain ? config.segments : Math.max(2, config.segments - 2);
       const segHeight = pieceHeight / segCount;
       const isCylinder = config.footprint === 'cylinder' && piece.isMain;
 
-      // Base/lobby - wider
       allSegs.push({
-        y: segHeight * 0.5,
-        h: segHeight,
-        w: piece.w * 1.15,
-        d: piece.d * 1.15,
-        x: piece.x,
-        z: piece.z,
-        isCylinder,
-        segIndex: 0,
-        segTotal: segCount,
+        y: segHeight * 0.5, h: segHeight, w: piece.w * 1.15, d: piece.d * 1.15,
+        x: piece.x, z: piece.z, isCylinder, segIndex: 0, segTotal: segCount,
       });
 
-      // Body segments with taper
       for (let i = 1; i < segCount; i++) {
         let scale = Math.pow(config.taperFactor, i);
-        if (config.footprint === 'tapered' && piece.isMain) {
-          scale *= Math.pow(0.96, i);
-        }
+        if (config.footprint === 'tapered' && piece.isMain) scale *= Math.pow(0.96, i);
         const variation = 1 + Math.sin(i * 2.1) * 0.03;
         allSegs.push({
-          y: segHeight * (i + 0.5),
-          h: segHeight - 0.04,
-          w: piece.w * scale * variation,
-          d: piece.d * scale * variation,
-          x: piece.x,
-          z: piece.z,
-          isCylinder,
-          segIndex: i,
-          segTotal: segCount,
+          y: segHeight * (i + 0.5), h: segHeight - 0.04, w: piece.w * scale * variation, d: piece.d * scale * variation,
+          x: piece.x, z: piece.z, isCylinder, segIndex: i, segTotal: segCount,
         });
       }
     }
     return allSegs;
   }, [height, width, depth, config, footprintPieces, buildingVariant]);
 
-  // Compute per-segment gradient colors: bottom darker, top lighter/more emissive
   const segmentColors = useMemo(() => {
-    const primary = new THREE.Color(primaryColor);
+    const primary = new THREE.Color(effectivePrimary);
     const secondary = new THREE.Color(secondaryColor);
-    const accent = new THREE.Color(accentColor);
+    const accent = new THREE.Color(effectiveAccent);
 
     return segments.map((seg) => {
       const t = seg.segTotal > 1 ? seg.segIndex / (seg.segTotal - 1) : 0;
-      // Bottom segments: darker (lerp toward secondary/black), top: lighter/more emissive
-      const darkFactor = 0.55 + t * 0.45; // 0.55 at bottom, 1.0 at top
+      const darkFactor = 0.55 + t * 0.45;
       const baseColor = primary.clone().multiplyScalar(darkFactor);
-      // Blend a touch of accent at the very top
       if (t > 0.7) {
         const accentBlend = (t - 0.7) / 0.3 * 0.15;
         baseColor.lerp(accent.clone(), accentBlend);
       }
-      const emissiveIntensity = style === 'neon-tower'
-        ? 0.3 + t * 0.5
-        : 0.15 + t * 0.35;
+      const emissiveIntensity = style === 'neon-tower' ? 0.3 + t * 0.5 : 0.15 + t * 0.35;
       return {
         color: '#' + baseColor.getHexString(),
         lobbyColor: '#' + secondary.getHexString(),
         emissiveIntensity,
       };
     });
-  }, [segments, primaryColor, secondaryColor, accentColor, style]);
+  }, [segments, effectivePrimary, secondaryColor, effectiveAccent, style]);
 
-  // Generate static window positions and merge into a single geometry with per-window brightness
   const windowGeometry = useMemo(() => {
     const windowPositions: { pos: [number, number, number]; rot: [number, number, number]; segIdx: number }[] = [];
 
@@ -218,7 +193,6 @@ export default function Building({ params, onClick }: BuildingProps) {
       }
     }
 
-    // Merge all windows into a single BufferGeometry with vertex colors for brightness variation
     const winW = 0.25;
     const winH = 0.35;
     const vertCount = windowPositions.length * 4;
@@ -229,12 +203,7 @@ export default function Building({ params, onClick }: BuildingProps) {
 
     const halfW = winW / 2;
     const halfH = winH / 2;
-    const corners = [
-      [-halfW, -halfH, 0],
-      [halfW, -halfH, 0],
-      [halfW, halfH, 0],
-      [-halfW, halfH, 0],
-    ];
+    const corners = [[-halfW, -halfH, 0], [halfW, -halfH, 0], [halfW, halfH, 0], [-halfW, halfH, 0]];
 
     const euler = new THREE.Euler();
     const quat = new THREE.Quaternion();
@@ -245,44 +214,26 @@ export default function Building({ params, onClick }: BuildingProps) {
       euler.set(rot[0], rot[1], rot[2]);
       quat.setFromEuler(euler);
 
-      // Vary window brightness: some bright (lit), some dim (dark/off)
-      // Use deterministic hash per window
       const winSeed = seed + i * 31.7 + segIdx * 17.3;
       const winRand = seededRandom(winSeed);
-      // 25% windows are dim/off, 50% normal, 25% extra bright
       let brightness: number;
-      if (winRand < 0.25) {
-        brightness = 0.08 + winRand * 0.5; // dim: 0.08-0.2
-      } else if (winRand < 0.75) {
-        brightness = 0.5 + (winRand - 0.25) * 1.0; // normal: 0.5-1.0
-      } else {
-        brightness = 1.0 + (winRand - 0.75) * 1.6; // bright: 1.0-1.4
-      }
+      if (winRand < 0.25) brightness = 0.08 + winRand * 0.5;
+      else if (winRand < 0.75) brightness = 0.5 + (winRand - 0.25) * 1.0;
+      else brightness = 1.0 + (winRand - 0.75) * 1.6;
 
       for (let j = 0; j < 4; j++) {
         vec.set(corners[j][0], corners[j][1], corners[j][2]);
         vec.applyQuaternion(quat);
-        vec.x += pos[0];
-        vec.y += pos[1];
-        vec.z += pos[2];
+        vec.x += pos[0]; vec.y += pos[1]; vec.z += pos[2];
         const idx = (i * 4 + j) * 3;
-        positions[idx] = vec.x;
-        positions[idx + 1] = vec.y;
-        positions[idx + 2] = vec.z;
-        // Store brightness in vertex color (white * brightness)
-        colors[idx] = brightness;
-        colors[idx + 1] = brightness;
-        colors[idx + 2] = brightness;
+        positions[idx] = vec.x; positions[idx + 1] = vec.y; positions[idx + 2] = vec.z;
+        colors[idx] = brightness; colors[idx + 1] = brightness; colors[idx + 2] = brightness;
       }
 
       const base = i * 4;
       const triBase = i * 6;
-      indices[triBase] = base;
-      indices[triBase + 1] = base + 1;
-      indices[triBase + 2] = base + 2;
-      indices[triBase + 3] = base;
-      indices[triBase + 4] = base + 2;
-      indices[triBase + 5] = base + 3;
+      indices[triBase] = base; indices[triBase + 1] = base + 1; indices[triBase + 2] = base + 2;
+      indices[triBase + 3] = base; indices[triBase + 4] = base + 2; indices[triBase + 5] = base + 3;
     }
 
     const geo = new THREE.BufferGeometry();
@@ -294,8 +245,7 @@ export default function Building({ params, onClick }: BuildingProps) {
   }, [segments, seed]);
 
   const crown = useMemo(() => {
-    const mainHeight = height;
-    const topY = mainHeight;
+    const topY = height;
 
     switch (config.crown) {
       case 'antenna':
@@ -303,15 +253,15 @@ export default function Building({ params, onClick }: BuildingProps) {
           <group position={[0, topY, 0]}>
             <mesh position={[0, 1.5, 0]}>
               <cylinderGeometry args={[0.03, 0.06, 3, 8]} />
-              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.5} />
+              <meshStandardMaterial color={effectiveAccent} emissive={effectiveAccent} emissiveIntensity={0.5} />
             </mesh>
             <mesh position={[0, 3.1, 0]}>
               <sphereGeometry args={[0.1, 8, 8]} />
-              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1} />
+              <meshStandardMaterial color={effectiveAccent} emissive={effectiveAccent} emissiveIntensity={1} />
             </mesh>
             <mesh position={[width * 0.25, 0.8, 0]}>
               <cylinderGeometry args={[0.02, 0.04, 1.6, 6]} />
-              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.3} />
+              <meshStandardMaterial color={effectiveAccent} emissive={effectiveAccent} emissiveIntensity={0.3} />
             </mesh>
           </group>
         );
@@ -333,7 +283,7 @@ export default function Building({ params, onClick }: BuildingProps) {
       case 'dome':
         return (
           <group position={[0, topY, 0]}>
-            <mesh position={[0, 0, 0]}>
+            <mesh>
               <sphereGeometry args={[Math.min(width, depth) * 0.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
               <meshPhysicalMaterial color={secondaryColor} roughness={0.2} metalness={0.7} transparent opacity={0.85} />
             </mesh>
@@ -348,7 +298,7 @@ export default function Building({ params, onClick }: BuildingProps) {
             </mesh>
             <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
               <ringGeometry args={[width * 0.2, width * 0.35, 24]} />
-              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} side={THREE.DoubleSide} />
+              <meshStandardMaterial color={effectiveAccent} emissive={effectiveAccent} emissiveIntensity={0.8} side={THREE.DoubleSide} />
             </mesh>
             {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([xd, zd], i) => (
               <mesh key={`hpad-${i}`} position={[xd * width * 0.45, 0.2, zd * depth * 0.45]}>
@@ -364,7 +314,7 @@ export default function Building({ params, onClick }: BuildingProps) {
             {[0, 1, 2].map((i) => (
               <mesh key={`step-${i}`} position={[0, i * 0.35 + 0.175, 0]}>
                 <boxGeometry args={[width * (0.9 - i * 0.2), 0.35, depth * (0.9 - i * 0.2)]} />
-                <meshPhysicalMaterial color={i === 2 ? accentColor : secondaryColor} roughness={0.3} metalness={0.6} emissive={i === 2 ? accentColor : '#000000'} emissiveIntensity={i === 2 ? 0.4 : 0} />
+                <meshPhysicalMaterial color={i === 2 ? effectiveAccent : secondaryColor} roughness={0.3} metalness={0.6} emissive={i === 2 ? effectiveAccent : '#000000'} emissiveIntensity={i === 2 ? 0.4 : 0} />
               </mesh>
             ))}
           </group>
@@ -373,7 +323,7 @@ export default function Building({ params, onClick }: BuildingProps) {
         return (
           <mesh position={[0, topY + 0.25, 0]}>
             <boxGeometry args={[width * 1.3, 0.5, depth * 1.3]} />
-            <meshPhysicalMaterial color={primaryColor} roughness={0.2} metalness={0.6} />
+            <meshPhysicalMaterial color={effectivePrimary} roughness={0.2} metalness={0.6} />
           </mesh>
         );
       case 'battlements':
@@ -408,9 +358,9 @@ export default function Building({ params, onClick }: BuildingProps) {
           </mesh>
         );
     }
-  }, [height, width, depth, config.crown, primaryColor, secondaryColor, accentColor]);
+  }, [height, width, depth, config.crown, effectivePrimary, secondaryColor, effectiveAccent]);
 
-  const emissiveColor = accentColor;
+  const emissiveColor = effectiveAccent;
   const baseEmissiveIntensity = style === 'neon-tower' ? windowGlow * 4 : windowGlow * 3;
 
   return (
@@ -421,19 +371,13 @@ export default function Building({ params, onClick }: BuildingProps) {
       onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
       onClick={(e) => { e.stopPropagation(); onClick(params); }}
     >
-      {/* Ground glow under building */}
+      {/* Ground glow */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
         <circleGeometry args={[Math.max(width, depth) * 1.2, 24]} />
-        <meshBasicMaterial
-          color={primaryColor}
-          transparent
-          opacity={0.08}
-          blending={THREE.AdditiveBlending}
-          depthWrite={false}
-        />
+        <meshBasicMaterial color={effectivePrimary} transparent opacity={isCurrentUser ? 0.12 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
 
-      {/* Building segments with gradient coloring */}
+      {/* Building segments */}
       {segments.map((seg, i) => (
         <group key={`seg-group-${i}`}>
           {seg.isCylinder ? (
@@ -441,12 +385,11 @@ export default function Building({ params, onClick }: BuildingProps) {
               <cylinderGeometry args={[seg.w / 2, seg.w / 2, seg.h, 24]} />
               <meshPhysicalMaterial
                 color={i === 0 ? segmentColors[i].lobbyColor : segmentColors[i].color}
-                emissive={primaryColor}
+                emissive={effectivePrimary}
                 emissiveIntensity={segmentColors[i].emissiveIntensity}
                 roughness={Math.min(config.roughness, 0.4)}
                 metalness={Math.max(config.metalness, 0.5)}
-                transparent
-                opacity={0.95}
+                transparent opacity={0.95}
               />
             </mesh>
           ) : (
@@ -454,41 +397,39 @@ export default function Building({ params, onClick }: BuildingProps) {
               <boxGeometry args={[seg.w, seg.h, seg.d]} />
               <meshPhysicalMaterial
                 color={i === 0 ? segmentColors[i].lobbyColor : segmentColors[i].color}
-                emissive={primaryColor}
+                emissive={effectivePrimary}
                 emissiveIntensity={segmentColors[i].emissiveIntensity}
                 roughness={Math.min(config.roughness, 0.4)}
                 metalness={Math.max(config.metalness, 0.5)}
-                transparent
-                opacity={0.95}
+                transparent opacity={0.95}
               />
             </mesh>
           )}
         </group>
       ))}
 
-      {/* Edge wireframe overlay - only when hovered */}
+      {/* Wireframe on hover */}
       {hovered && segments.map((seg, i) => (
         seg.isCylinder ? (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <cylinderGeometry args={[seg.w / 2 + 0.01, seg.w / 2 + 0.01, seg.h + 0.02, 24]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
+            <meshBasicMaterial color={effectiveAccent} wireframe transparent opacity={0.3} />
           </mesh>
         ) : (
           <mesh key={`wire-${i}`} position={[seg.x, seg.y, seg.z]}>
             <boxGeometry args={[seg.w + 0.02, seg.h + 0.02, seg.d + 0.02]} />
-            <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
+            <meshBasicMaterial color={effectiveAccent} wireframe transparent opacity={0.3} />
           </mesh>
         )
       ))}
 
-      {/* All windows as a single merged mesh with vertex color brightness variation */}
+      {/* Windows */}
       <mesh geometry={windowGeometry}>
         <meshStandardMaterial
           color="#ffffff"
           emissive={emissiveColor}
           emissiveIntensity={baseEmissiveIntensity}
-          transparent
-          opacity={0.9}
+          transparent opacity={0.9}
           side={THREE.DoubleSide}
           vertexColors
         />
@@ -501,58 +442,26 @@ export default function Building({ params, onClick }: BuildingProps) {
       {height > 15 && (
         <mesh position={[0, height + 0.5, 0]}>
           <sphereGeometry args={[width * 0.8, 16, 16]} />
-          <meshBasicMaterial
-            color={accentColor}
-            transparent
-            opacity={0.06}
-            blending={THREE.AdditiveBlending}
-            depthWrite={false}
-            side={THREE.BackSide}
-          />
+          <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
         </mesh>
       )}
 
-      {/* Single accent light per building */}
-      <pointLight position={[0, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={primaryColor} distance={6} />
+      {/* Accent light */}
+      <pointLight position={[0, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={effectivePrimary} distance={6} />
 
-      {/* Neon edge glow - only when hovered */}
+      {/* Neon edge glow on hover */}
       {hovered && (
         <mesh position={[0, height * 0.5, 0]}>
           <boxGeometry args={[width + 0.2, height + 0.2, depth + 0.2]} />
-          <meshBasicMaterial color={accentColor} wireframe transparent opacity={0.3} />
+          <meshBasicMaterial color={effectiveAccent} wireframe transparent opacity={0.3} />
         </mesh>
-      )}
-
-      {/* Current user beacon */}
-      {isCurrentUser && (
-        <>
-          <UserBeacon height={height} width={width} depth={depth} />
-          <Html position={[0, height + 4.5, 0]} center style={{ pointerEvents: 'none' }}>
-            <div style={{
-              background: 'rgba(29,185,84,0.15)',
-              backdropFilter: 'blur(8px)',
-              color: '#1DB954',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontFamily: 'system-ui, sans-serif',
-              fontSize: '11px',
-              fontWeight: 700,
-              whiteSpace: 'nowrap',
-              border: '1px solid rgba(29,185,84,0.5)',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}>
-              Your Building
-            </div>
-          </Html>
-        </>
       )}
 
       {/* Hover label */}
       {hovered && (
         <Html position={[0, height + 2, 0]} center style={{ pointerEvents: 'none' }}>
           <div style={{
-            background: 'rgba(10,10,10,0.9)',
+            background: 'rgba(8,9,10,0.9)',
             backdropFilter: 'blur(10px)',
             color: '#1DB954',
             padding: '6px 14px',
@@ -572,38 +481,5 @@ export default function Building({ params, onClick }: BuildingProps) {
         </Html>
       )}
     </group>
-  );
-}
-
-// Animated beacon for the current user's building
-function UserBeacon({ height, width, depth }: { height: number; width: number; depth: number }) {
-  const ringRef = useRef<THREE.Mesh>(null);
-  const lightRef = useRef<THREE.PointLight>(null);
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    if (ringRef.current) {
-      ringRef.current.rotation.y = t * 0.3;
-      ringRef.current.scale.setScalar(1 + Math.sin(t * 1.5) * 0.08);
-    }
-    if (lightRef.current) {
-      lightRef.current.intensity = 2 + Math.sin(t * 2) * 1;
-    }
-  });
-
-  const radius = Math.max(width, depth) * 0.9;
-
-  return (
-    <>
-      <mesh ref={ringRef} position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[radius, radius + 0.15, 48]} />
-        <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={2} transparent opacity={0.7} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, height / 2, 0]}>
-        <cylinderGeometry args={[0.04, 0.04, height + 6, 8]} />
-        <meshStandardMaterial color="#1DB954" emissive="#1DB954" emissiveIntensity={1.5} transparent opacity={0.25} />
-      </mesh>
-      <pointLight ref={lightRef} position={[0, height + 2, 0]} color="#1DB954" intensity={2} distance={25} />
-    </>
   );
 }

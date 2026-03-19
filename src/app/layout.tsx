@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
+  themeColor: '#08090a',
 };
 
 export default function RootLayout({
@@ -30,7 +30,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full bg-[#0a0a0a] font-sans text-white antialiased">
+      <body className="min-h-full bg-[#08090a] font-sans text-white antialiased">
         <Providers>{children}</Providers>
       </body>
     </html>
