@@ -27,4 +27,6 @@ export interface BuildingParams {
   position: [number, number, number];
   profile: SpotifyProfile;
   isCurrentUser?: boolean;
+  dimmed?: boolean;
+  highlighted?: boolean;
 }

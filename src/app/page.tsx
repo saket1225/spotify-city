@@ -99,15 +99,76 @@ function AnimatedCount({ count, active }: { count: number; active: boolean }) {
   return <span>{display}</span>;
 }
 
-function LoadingScreen() {
+function SkylineLoader() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((p) => Math.min(p + 0.02, 1));
+    }, 30);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Generate deterministic building silhouettes
+  const buildings = useMemo(() => {
+    const b: { x: number; w: number; maxH: number }[] = [];
+    for (let i = 0; i < 28; i++) {
+      const seed = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+      const r = seed - Math.floor(seed);
+      b.push({
+        x: i * 14 + 2,
+        w: 8 + r * 5,
+        maxH: 20 + r * 80,
+      });
+    }
+    return b;
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050510]">
-      <div className="flex flex-col items-center gap-6">
-        <div className="loading-dot w-4 h-4 rounded-full bg-[#1DB954]" />
+      <div className="flex flex-col items-center gap-8">
+        {/* Skyline silhouette being built progressively */}
+        <div className="relative w-[380px] h-[120px] overflow-hidden">
+          <svg width="380" height="120" viewBox="0 0 390 120">
+            {buildings.map((b, i) => {
+              const delay = i / buildings.length;
+              const localProgress = Math.max(0, Math.min(1, (progress - delay * 0.5) / 0.5));
+              const eased = 1 - Math.pow(1 - localProgress, 3);
+              const h = b.maxH * eased;
+              return (
+                <rect
+                  key={i}
+                  x={b.x}
+                  y={120 - h}
+                  width={b.w}
+                  height={h}
+                  fill={localProgress > 0.8 ? '#1DB954' : '#1a1a2e'}
+                  opacity={0.4 + localProgress * 0.6}
+                  rx={1}
+                >
+                  {localProgress > 0.8 && (
+                    <animate
+                      attributeName="opacity"
+                      values={`${0.4 + localProgress * 0.6};1;${0.4 + localProgress * 0.6}`}
+                      dur="2s"
+                      repeatCount="indefinite"
+                    />
+                  )}
+                </rect>
+              );
+            })}
+            {/* Ground line */}
+            <line x1="0" y1="119" x2="390" y2="119" stroke="#1DB954" strokeWidth="1" opacity="0.4" />
+          </svg>
+        </div>
         <p className="font-pixel text-lg text-gray-400 tracking-wide">Building your city...</p>
       </div>
     </div>
   );
+}
+
+function LoadingScreen() {
+  return <SkylineLoader />;
 }
 
 function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
