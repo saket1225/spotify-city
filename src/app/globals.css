@@ -1,10 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #08090a;
+  --foreground: #e0e0e0;
   --spotify-green: #1DB954;
   --spotify-green-dim: rgba(29, 185, 84, 0.15);
+  --fog: #0a0a1e;
+  --muted: #666;
+  --card-bg: rgba(12, 12, 20, 0.85);
+  --motion: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion: 0;
+  }
 }
 
 @theme inline {
@@ -31,26 +41,31 @@ body {
   font-family: 'Silkscreen', monospace;
 }
 
+/* Film grain overlay */
+.film-grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* Glass-morphism utilities */
 .glass {
-  background: rgba(18, 18, 18, 0.6);
+  background: rgba(12, 12, 20, 0.6);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .glass-strong {
-  background: rgba(18, 18, 18, 0.8);
+  background: rgba(12, 12, 20, 0.8);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-green {
-  background: rgba(29, 185, 84, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(29, 185, 84, 0.2);
 }
 
 /* Spotify green glow */
@@ -80,54 +95,14 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes slideInRight {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
 }
 
-@keyframes typewriter {
-  from { width: 0; }
-  to { width: 100%; }
-}
-
-@keyframes blink {
-  50% { border-color: transparent; }
-}
-
 @keyframes pulse-glow {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes count-up {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes letter-reveal {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes badgeGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(29, 185, 84, 0.2); }
-  50% { box-shadow: 0 0 16px rgba(29, 185, 84, 0.5), 0 0 32px rgba(29, 185, 84, 0.2); }
-}
-
-@keyframes badgeUnlock {
-  0% { transform: scale(0) rotate(-20deg); opacity: 0; }
-  50% { transform: scale(1.2) rotate(5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
 .animate-fade-in {
@@ -138,48 +113,12 @@ body {
   animation: slideUp 0.5s ease-out forwards;
 }
 
-.animate-slide-down {
-  animation: slideDown 0.4s ease-out forwards;
-}
-
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Slide-in panel for leaderboard */
 .slide-in-right {
   animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* Badge glow effect */
-.badge-glow {
-  animation: badgeGlow 2s ease-in-out infinite;
-}
-
-.badge-unlock {
-  animation: badgeUnlock 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* Floating action buttons */
-.fab-button {
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.fab-button:hover {
-  transform: scale(1.15);
-}
-
-.fab-button:active {
-  transform: scale(0.95);
-}
-
-/* Compare mode bars */
-.compare-bar {
-  transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Custom scrollbar */
@@ -198,16 +137,6 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
-}
-
-/* Loading dot pulse */
-@keyframes loadingPulse {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.8); opacity: 1; box-shadow: 0 0 30px rgba(29, 185, 84, 0.6); }
-}
-
-.loading-dot {
-  animation: loadingPulse 1.4s ease-in-out infinite;
 }
 
 /* Canvas takes full space */

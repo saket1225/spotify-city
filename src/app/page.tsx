@@ -1,105 +1,18 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signIn } from 'next-auth/react';
 import { getSampleBuildings } from '@/lib/sampleData';
 import { generateBuildingParams } from '@/lib/buildingGenerator';
 import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
-import LoginButton from '@/components/LoginButton';
-import SearchBar, { SearchBarHandle } from '@/components/SearchBar';
 import ShareCard from '@/components/ShareCard';
-import Leaderboard from '@/components/Leaderboard';
-import CompareMode from '@/components/CompareMode';
-import InviteFriends from '@/components/InviteFriends';
-import CityNav from '@/components/CityNav';
-import Footer from '@/components/Footer';
 
 const City = dynamic(() => import('@/components/City'), { ssr: false });
 
-function AnimatedTitle() {
-  const text = 'SPOTIFY CITY';
-  const [revealed, setRevealed] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setRevealed((p) => {
-        if (p >= text.length) { clearInterval(timer); return p; }
-        return p + 1;
-      });
-    }, 80);
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <h1 className="font-pixel text-xl sm:text-2xl font-bold tracking-widest whitespace-nowrap">
-      {text.split('').map((char, i) => (
-        <span
-          key={i}
-          className={`inline-block transition-all duration-300 ${
-            i < revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-          }`}
-          style={{
-            color: i < revealed ? '#1DB954' : 'transparent',
-            textShadow: i < revealed ? '0 0 30px rgba(29,185,84,0.4)' : 'none',
-            transitionDelay: `${i * 40}ms`,
-          }}
-        >
-          {char === ' ' ? '\u00A0' : char}
-        </span>
-      ))}
-    </h1>
-  );
-}
-
-function TypewriterSubtitle() {
-  const text = 'Your music. Your city. Your building.';
-  const [chars, setChars] = useState(0);
-
-  useEffect(() => {
-    const delay = setTimeout(() => {
-      const timer = setInterval(() => {
-        setChars((p) => {
-          if (p >= text.length) { clearInterval(timer); return p; }
-          return p + 1;
-        });
-      }, 40);
-      return () => clearInterval(timer);
-    }, 1200);
-    return () => clearTimeout(delay);
-  }, []);
-
-  return (
-    <p className="text-[10px] sm:text-xs text-gray-500 h-4 mt-1">
-      {text.slice(0, chars)}
-      {chars < text.length && <span className="inline-block w-[2px] h-3 bg-gray-500 ml-[1px] animate-pulse" />}
-    </p>
-  );
-}
-
-function AnimatedCount({ count, active }: { count: number; active: boolean }) {
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (!active) return;
-    let frame: number;
-    const start = performance.now();
-    const duration = 1500;
-    const animate = (now: number) => {
-      const progress = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(eased * count));
-      if (progress < 1) frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [count, active]);
-
-  return <span>{display}</span>;
-}
-
-function SkylineLoader() {
+/* ── Loading screen: skyline rises from the ground ── */
+function SkylineLoader({ stats }: { stats: string | null }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -114,17 +27,13 @@ function SkylineLoader() {
     for (let i = 0; i < 28; i++) {
       const seed = Math.sin(i * 127.1 + 311.7) * 43758.5453;
       const r = seed - Math.floor(seed);
-      b.push({
-        x: i * 14 + 2,
-        w: 8 + r * 5,
-        maxH: 20 + r * 80,
-      });
+      b.push({ x: i * 14 + 2, w: 8 + r * 5, maxH: 20 + r * 80 });
     }
     return b;
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050510]">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#08090a]">
       <div className="flex flex-col items-center gap-8">
         <div className="relative w-[380px] h-[120px] overflow-hidden">
           <svg width="380" height="120" viewBox="0 0 390 120">
@@ -143,50 +52,27 @@ function SkylineLoader() {
                   fill={localProgress > 0.8 ? '#1DB954' : '#1a1a2e'}
                   opacity={0.4 + localProgress * 0.6}
                   rx={1}
-                >
-                  {localProgress > 0.8 && (
-                    <animate
-                      attributeName="opacity"
-                      values={`${0.4 + localProgress * 0.6};1;${0.4 + localProgress * 0.6}`}
-                      dur="2s"
-                      repeatCount="indefinite"
-                    />
-                  )}
-                </rect>
+                />
               );
             })}
             <line x1="0" y1="119" x2="390" y2="119" stroke="#1DB954" strokeWidth="1" opacity="0.4" />
           </svg>
         </div>
         <p className="font-pixel text-lg text-gray-400 tracking-wide">Building your city...</p>
+        {stats && (
+          <p className="text-sm text-gray-500 animate-pulse">{stats}</p>
+        )}
       </div>
     </div>
   );
 }
 
-function LoadingScreen() {
-  return <SkylineLoader />;
-}
-
-function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
-  const [visible, setVisible] = useState(true);
-  const [fading, setFading] = useState(false);
-
-  const handleSignIn = () => {
-    setFading(true);
-    setTimeout(() => setVisible(false), 600);
-    signIn('spotify');
-    onSignIn();
-  };
-
-  if (!visible) return null;
-
+/* ── Landing hero: title + sign in + demo city behind ── */
+function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
   return (
     <div
-      className={`fixed inset-0 z-40 flex flex-col items-center justify-center transition-opacity duration-500 ${
-        fading ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      }`}
-      style={{ background: 'radial-gradient(ellipse at center, rgba(5,5,16,0.7) 0%, rgba(5,5,16,0.92) 70%)' }}
+      className="fixed inset-0 z-40 flex flex-col items-center justify-center"
+      style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.65) 0%, rgba(8,9,10,0.92) 70%)' }}
     >
       <div className="flex flex-col items-center gap-6 px-6 text-center">
         <h1
@@ -198,31 +84,34 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
           SPOTIFY CITY
         </h1>
 
-        <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md">
-          See your music taste as a city skyline
+        <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md font-light">
+          Your music. Your city.
         </p>
 
         <button
-          onClick={handleSignIn}
-          className="mt-6 px-10 py-4 rounded-full text-base sm:text-lg font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
+          onClick={() => signIn('spotify')}
+          className="mt-6 flex items-center gap-3 px-10 py-4 rounded-full text-base sm:text-lg font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
           style={{
             background: '#1DB954',
             color: '#000',
             boxShadow: '0 0 20px rgba(29,185,84,0.3)',
           }}
         >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+          </svg>
           Sign in with Spotify
         </button>
 
         <button
-          onClick={() => { setFading(true); setTimeout(() => setVisible(false), 600); onSignIn(); }}
-          className="mt-2 text-gray-500 text-xs tracking-wider hover:text-gray-300 transition-colors"
+          onClick={onExploreDemo}
+          className="mt-2 text-gray-500 text-xs tracking-wider hover:text-gray-300 transition-colors underline underline-offset-4 decoration-gray-700"
         >
-          or explore the demo city
+          explore demo
         </button>
 
-        <p className="mt-10 text-gray-600 text-xs tracking-wider">
-          Built by <span className="text-gray-500">@codanium_</span>
+        <p className="mt-12 text-gray-600 text-[11px] tracking-wider">
+          built by <span className="text-gray-500">@codanium_</span>
         </p>
       </div>
     </div>
@@ -232,28 +121,27 @@ function HeroOverlay({ onSignIn }: { onSignIn: () => void }) {
 export default function Home() {
   const { data: session, status } = useSession();
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingParams | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [genreFilter, setGenreFilter] = useState<string | null>(null);
-  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
-  const [compareOpen, setCompareOpen] = useState(false);
   const [shareCardBuilding, setShareCardBuilding] = useState<BuildingParams | null>(null);
-  const [inviteOpen, setInviteOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [heroVisible, setHeroVisible] = useState(true);
   const [userProfile, setUserProfile] = useState<SpotifyProfile | null>(null);
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
-
-  const searchRef = useRef<SearchBarHandle>(null);
-  const controlsRef = useRef<{ rotate: (dx: number, dy: number) => void; reset: () => void } | null>(null);
+  const [loadingStats, setLoadingStats] = useState<string | null>(null);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
     if (status !== 'authenticated' || !session?.accessToken) return;
     let cancelled = false;
+    setLoadingStats('Analyzing your music...');
     fetch('/api/spotify')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && data && !data.error) setUserProfile(data);
+        if (!cancelled && data && !data.error) {
+          setLoadingStats(`Analyzing ${data.estimatedListeningHours.toLocaleString()} hours of music...`);
+          setTimeout(() => {
+            setUserProfile(data);
+          }, 800);
+        }
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -261,7 +149,6 @@ export default function Home() {
 
   const sampleBuildings = useMemo(() => getSampleBuildings(), []);
 
-  // Merge user building (index 0, marked as current user) with sample buildings
   const allBuildings = useMemo(() => {
     if (!userProfile) return sampleBuildings;
     const userBuilding = {
@@ -274,63 +161,9 @@ export default function Home() {
     return [userBuilding, ...reindexed];
   }, [userProfile, sampleBuildings]);
 
-  // Search matching - returns set of matching IDs (null = no filter active)
-  const matchingIds = useMemo(() => {
-    const hasSearch = searchQuery.trim().length > 0;
-    const hasGenre = genreFilter !== null;
-    if (!hasSearch && !hasGenre) return null;
-
-    const q = searchQuery.toLowerCase();
-    const ids = new Set<string>();
-
-    for (const b of allBuildings) {
-      let matches = false;
-
-      if (hasSearch) {
-        matches =
-          b.profile.displayName.toLowerCase().includes(q) ||
-          b.profile.topGenres.some((g) => g.toLowerCase().includes(q)) ||
-          b.profile.topArtists.some((a) => a.name.toLowerCase().includes(q));
-      }
-
-      if (hasGenre && !hasSearch) {
-        const gLower = genreFilter!.toLowerCase();
-        matches = b.profile.topGenres.some((g) => g.toLowerCase().includes(gLower));
-      }
-
-      if (matches) ids.add(b.profile.id);
-    }
-    return ids;
-  }, [allBuildings, searchQuery, genreFilter]);
-
-  // All buildings always rendered, dimmed/highlighted based on search
-  const buildings = useMemo(() => {
-    if (!matchingIds) return allBuildings;
-    return allBuildings.map((b) => ({
-      ...b,
-      dimmed: !matchingIds.has(b.profile.id),
-      highlighted: matchingIds.has(b.profile.id),
-    }));
-  }, [allBuildings, matchingIds]);
-
-  // Get rank for a building (by listening hours)
-  const getRank = useCallback((building: BuildingParams): number => {
-    const sorted = [...allBuildings].sort(
-      (a, b) => b.profile.estimatedListeningHours - a.profile.estimatedListeningHours
-    );
-    return sorted.findIndex(b => b.profile.id === building.profile.id) + 1;
-  }, [allBuildings]);
-
   const handleBuildingClick = (building: BuildingParams) => {
     setSelectedBuilding(building);
   };
-
-  const handleVisitBuilding = useCallback(() => {
-    if (!selectedBuilding) return;
-    const pos = selectedBuilding.position;
-    setFocusPosition([pos[0], selectedBuilding.height / 2, pos[2]]);
-    setSelectedBuilding(null);
-  }, [selectedBuilding]);
 
   const handleShareFromProfile = () => {
     if (selectedBuilding) {
@@ -339,7 +172,7 @@ export default function Home() {
     }
   };
 
-  // Hide loading after a delay for Three.js init
+  // Hide loading after delay for Three.js init
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2200);
     return () => clearTimeout(timer);
@@ -350,165 +183,101 @@ export default function Home() {
     if (status === 'authenticated') setHeroVisible(false);
   }, [status]);
 
-  // Keyboard navigation
+  // Escape to close panels
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
-      const isInput = tag === 'INPUT' || tag === 'TEXTAREA';
-
-      // Escape - close any open panel
       if (e.key === 'Escape') {
         if (selectedBuilding) { setSelectedBuilding(null); return; }
-        if (leaderboardOpen) { setLeaderboardOpen(false); return; }
-        if (compareOpen) { setCompareOpen(false); return; }
-        if (inviteOpen) { setInviteOpen(false); return; }
         if (shareCardBuilding) { setShareCardBuilding(null); return; }
-        if (isInput) { (e.target as HTMLElement).blur(); return; }
-      }
-
-      // / to focus search
-      if (e.key === '/' && !isInput) {
-        e.preventDefault();
-        searchRef.current?.focus();
-        return;
-      }
-
-      // Space to reset camera
-      if (e.key === ' ' && !isInput) {
-        e.preventDefault();
-        controlsRef.current?.reset();
-        setFocusPosition(null);
-        return;
-      }
-
-      // Arrow keys to rotate camera
-      if (!isInput && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-        e.preventDefault();
-        const speed = 0.05;
-        switch (e.key) {
-          case 'ArrowLeft': controlsRef.current?.rotate(-speed, 0); break;
-          case 'ArrowRight': controlsRef.current?.rotate(speed, 0); break;
-          case 'ArrowUp': controlsRef.current?.rotate(0, -speed); break;
-          case 'ArrowDown': controlsRef.current?.rotate(0, speed); break;
-        }
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBuilding, leaderboardOpen, compareOpen, inviteOpen, shareCardBuilding]);
+  }, [selectedBuilding, shareCardBuilding]);
+
+  // User's name and hours for the bottom stat
+  const userName = userProfile?.displayName || (status === 'authenticated' ? session?.user?.name : null);
+  const userHours = userProfile?.estimatedListeningHours;
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-[#050510]">
+    <div className="film-grain relative flex h-screen w-screen flex-col overflow-hidden bg-[#08090a]">
       {/* Loading Screen */}
-      {loading && <LoadingScreen />}
+      {loading && <SkylineLoader stats={loadingStats} />}
 
-      {/* Hero Overlay - shown before sign in */}
+      {/* Hero Overlay */}
       {!loading && heroVisible && (
-        <HeroOverlay onSignIn={() => setHeroVisible(false)} />
+        <HeroOverlay onExploreDemo={() => setHeroVisible(false)} />
       )}
 
-      {/* Header - glass bar */}
-      <header className="fixed top-0 left-0 right-0 z-40 glass-strong">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 max-w-full">
-          {/* Left: Title + Subtitle */}
-          <div className="flex-shrink-0 min-w-0">
-            <AnimatedTitle />
-            <TypewriterSubtitle />
-          </div>
-
-          {/* Center: Search with genre chips */}
-          <div className="hidden sm:block flex-1 max-w-sm mx-4">
-            <SearchBar ref={searchRef} onSearch={setSearchQuery} onGenreFilter={setGenreFilter} showChips />
-          </div>
-
-          {/* Right: Login */}
-          <div className="flex-shrink-0">
-            <LoginButton />
-          </div>
-        </div>
-
-        {/* Mobile search - below header on small screens */}
-        <div className="sm:hidden px-4 pb-3">
-          <SearchBar onSearch={setSearchQuery} onGenreFilter={setGenreFilter} showChips />
-        </div>
-      </header>
+      {/* Minimal header: title left, avatar right */}
+      {!heroVisible && !loading && (
+        <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-4">
+          <span
+            className="font-pixel text-sm tracking-[0.15em] text-[#1DB954]"
+            style={{ textShadow: '0 0 20px rgba(29,185,84,0.3)' }}
+          >
+            SPOTIFY CITY
+          </span>
+          {session?.user?.image ? (
+            <img
+              src={session.user.image}
+              alt=""
+              className="h-8 w-8 rounded-full ring-1 ring-white/10"
+            />
+          ) : session?.user?.name ? (
+            <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold text-gray-400">
+              {session.user.name.charAt(0).toUpperCase()}
+            </div>
+          ) : null}
+        </header>
+      )}
 
       {/* 3D City - full viewport */}
       <main className="fixed inset-0">
         <City
-          buildings={buildings}
+          buildings={allBuildings}
           onBuildingClick={handleBuildingClick}
           focusPosition={focusPosition}
-          controlsRef={controlsRef}
         />
       </main>
 
-      {/* Building count */}
-      <div className="fixed bottom-3 left-3 sm:bottom-5 sm:left-5 z-10">
-        <div className="glass rounded-lg sm:rounded-xl px-3 py-1.5 sm:px-4 sm:py-2 glow-green">
-          <span className="text-xs sm:text-sm font-semibold text-[#1DB954]">
-            <AnimatedCount count={buildings.length} active={!loading} />
-          </span>
-          <span className="text-[10px] sm:text-xs text-gray-500 ml-1 sm:ml-2">buildings in the city</span>
+      {/* Bottom stat: user name + hours */}
+      {!heroVisible && !loading && userName && userHours && (
+        <div className="fixed bottom-5 left-5 z-10">
+          <p className="text-xs text-gray-500 tracking-wide">
+            <span className="text-gray-400 font-medium">{userName}</span>
+            {"'s City — "}
+            <span className="text-[#1DB954]">{userHours.toLocaleString()}h</span> listened
+          </p>
         </div>
-      </div>
+      )}
 
-      {/* Keyboard hints */}
-      <div className="fixed bottom-3 right-20 sm:bottom-5 sm:right-24 z-10 hidden sm:flex gap-1.5 items-center">
-        {[
-          { key: '/', label: 'Search' },
-          { key: 'Space', label: 'Reset' },
-          { key: 'Esc', label: 'Close' },
-          { key: '←→↑↓', label: 'Rotate' },
-        ].map(({ key, label }) => (
-          <div key={key} className="flex items-center gap-1">
-            <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono text-gray-500 bg-white/5 border border-white/10">
-              {key}
-            </kbd>
-            <span className="text-[9px] text-gray-600">{label}</span>
-          </div>
-        ))}
-      </div>
+      {/* Floating Share button */}
+      {!heroVisible && !loading && (
+        <button
+          onClick={() => {
+            const myBuilding = allBuildings.find((b) => b.isCurrentUser) || allBuildings[0];
+            if (myBuilding) setShareCardBuilding(myBuilding);
+          }}
+          className="fixed bottom-5 right-5 z-10 flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold text-black transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(29,185,84,0.4)] active:scale-95"
+          style={{ background: '#1DB954', boxShadow: '0 0 15px rgba(29,185,84,0.25)' }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <polyline points="16 6 12 2 8 6" />
+            <line x1="12" y1="2" x2="12" y2="15" />
+          </svg>
+          Share
+        </button>
+      )}
 
-      {/* Floating Nav */}
-      <CityNav
-        onResetCamera={() => {
-          controlsRef.current?.reset();
-          setFocusPosition(null);
-        }}
-        onFindMyBuilding={() => {
-          const myBuilding = allBuildings.find((b) => b.isCurrentUser);
-          if (myBuilding) {
-            setFocusPosition([myBuilding.position[0], myBuilding.height / 2, myBuilding.position[2]]);
-            setSelectedBuilding(myBuilding);
-          } else if (allBuildings.length > 0) {
-            setSelectedBuilding(allBuildings[0]);
-          }
-        }}
-        onOpenLeaderboard={() => setLeaderboardOpen(true)}
-        onOpenShareCard={() => {
-          if (allBuildings.length > 0) {
-            setShareCardBuilding(allBuildings[0]);
-          }
-        }}
-        onOpenInvite={() => setInviteOpen(true)}
-        onOpenCompare={() => setCompareOpen(true)}
-      />
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Profile Card Overlay */}
+      {/* Profile Card Overlay (slide-in from right on building click) */}
       {selectedBuilding && (
         <ProfileCard
           profile={selectedBuilding.profile}
           buildingColor={selectedBuilding.primaryColor}
-          rank={getRank(selectedBuilding)}
           onClose={() => setSelectedBuilding(null)}
           onShare={handleShareFromProfile}
-          onVisitBuilding={handleVisitBuilding}
-          allBuildings={allBuildings}
         />
       )}
 
@@ -516,34 +285,9 @@ export default function Home() {
       {shareCardBuilding && (
         <ShareCard
           profile={shareCardBuilding.profile}
-          rank={getRank(shareCardBuilding)}
           onClose={() => setShareCardBuilding(null)}
         />
       )}
-
-      {/* Leaderboard */}
-      <Leaderboard
-        buildings={allBuildings}
-        isOpen={leaderboardOpen}
-        onClose={() => setLeaderboardOpen(false)}
-        onBuildingClick={(b) => {
-          setLeaderboardOpen(false);
-          setSelectedBuilding(b);
-        }}
-      />
-
-      {/* Compare Mode */}
-      <CompareMode
-        buildings={allBuildings}
-        isOpen={compareOpen}
-        onClose={() => setCompareOpen(false)}
-      />
-
-      {/* Invite Friends */}
-      <InviteFriends
-        isOpen={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-      />
     </div>
   );
 }
