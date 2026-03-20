@@ -143,9 +143,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Title fade+scale entrance animation. Live counter "12,847 cities built" ticking up. Button hover effects (scale + green shadow). Radial gradient overlay - transparent center to dramatically reveal the city behind.
 **Result:** Shipped. Hero feels alive, creates social proof, city visible behind.
 
+## Decision #29 - Profile Card Redesign (Mar 21, 2026)
+**Problem:** Profile card was cluttered with color palette, tracks, bar charts, stat grids.
+**Decision:** Stripped to essentials: huge listening hours stat (56px), rank below, building style label above name, subtle genre pills, gradient rank bar, ghost share button. Subtler glass panel. Removed color palette, top tracks, bar chart, stat grid.
+**Result:** Shipped. Clean, stat-focused profile card that tells you what matters.
+
 ---
 
 ## Backlog (prioritized)
 1. Instanced meshes for distant buildings
-2. Better profile card design
-3. City comparison view (side-by-side)
+2. City comparison view (side-by-side)
+3. Share card refresh to match new branding
