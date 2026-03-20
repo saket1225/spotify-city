@@ -236,6 +236,142 @@ function FloatingParticles() {
   );
 }
 
+/* ── Street Furniture: lamps, trees, benches ── */
+function StreetLamp({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      {/* Pole */}
+      <mesh position={[0, 0.8, 0]}>
+        <cylinderGeometry args={[0.03, 0.04, 1.6, 6]} />
+        <meshPhysicalMaterial color="#333333" roughness={0.4} metalness={0.8} />
+      </mesh>
+      {/* Arm */}
+      <mesh position={[0.15, 1.5, 0]} rotation={[0, 0, Math.PI / 6]}>
+        <cylinderGeometry args={[0.02, 0.02, 0.4, 4]} />
+        <meshPhysicalMaterial color="#333333" roughness={0.4} metalness={0.8} />
+      </mesh>
+      {/* Light */}
+      <mesh position={[0.25, 1.55, 0]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial color="#ffeecc" emissive="#ffdd88" emissiveIntensity={2} />
+      </mesh>
+      <pointLight position={[0.25, 1.55, 0]} intensity={0.3} color="#ffdd88" distance={5} />
+    </group>
+  );
+}
+
+function LowPolyTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
+  return (
+    <group position={position} scale={scale}>
+      {/* Trunk */}
+      <mesh position={[0, 0.3, 0]}>
+        <cylinderGeometry args={[0.04, 0.06, 0.6, 5]} />
+        <meshStandardMaterial color="#5a3a20" roughness={0.9} />
+      </mesh>
+      {/* Foliage layers */}
+      <mesh position={[0, 0.7, 0]}>
+        <coneGeometry args={[0.25, 0.5, 6]} />
+        <meshStandardMaterial color="#1a5a2a" emissive="#0a2a0a" emissiveIntensity={0.1} />
+      </mesh>
+      <mesh position={[0, 0.95, 0]}>
+        <coneGeometry args={[0.2, 0.4, 6]} />
+        <meshStandardMaterial color="#226633" emissive="#0a2a0a" emissiveIntensity={0.1} />
+      </mesh>
+    </group>
+  );
+}
+
+function StreetBench({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {/* Seat */}
+      <mesh position={[0, 0.15, 0]}>
+        <boxGeometry args={[0.5, 0.04, 0.15]} />
+        <meshPhysicalMaterial color="#5a3a1a" roughness={0.8} metalness={0.1} />
+      </mesh>
+      {/* Legs */}
+      {[-0.2, 0.2].map((x) => (
+        <mesh key={x} position={[x, 0.07, 0]}>
+          <boxGeometry args={[0.03, 0.14, 0.12]} />
+          <meshPhysicalMaterial color="#444" roughness={0.5} metalness={0.7} />
+        </mesh>
+      ))}
+      {/* Backrest */}
+      <mesh position={[0, 0.28, -0.06]}>
+        <boxGeometry args={[0.5, 0.15, 0.02]} />
+        <meshPhysicalMaterial color="#5a3a1a" roughness={0.8} metalness={0.1} />
+      </mesh>
+    </group>
+  );
+}
+
+function StreetFurniture({ buildings }: { buildings: BuildingParams[] }) {
+  const items = useMemo(() => {
+    const lamps: [number, number, number][] = [];
+    const trees: { pos: [number, number, number]; scale: number }[] = [];
+    const benches: { pos: [number, number, number]; rot: number }[] = [];
+
+    // Place street furniture near buildings
+    for (let i = 0; i < buildings.length; i++) {
+      const b = buildings[i];
+      const seed = b.position[0] * 73 + b.position[2] * 137;
+      const rand = (n: number) => {
+        const x = Math.sin(seed * 127.1 + n * 311.7) * 43758.5453;
+        return x - Math.floor(x);
+      };
+
+      // Street lamp nearby
+      if (rand(1) > 0.3) {
+        const angle = rand(2) * Math.PI * 2;
+        const dist = b.width * 0.8 + 1.5;
+        lamps.push([
+          b.position[0] + Math.cos(angle) * dist,
+          0,
+          b.position[2] + Math.sin(angle) * dist,
+        ]);
+      }
+
+      // Tree nearby
+      if (rand(3) > 0.4) {
+        const angle = rand(4) * Math.PI * 2;
+        const dist = b.width * 0.8 + 2;
+        trees.push({
+          pos: [
+            b.position[0] + Math.cos(angle) * dist,
+            0,
+            b.position[2] + Math.sin(angle) * dist,
+          ],
+          scale: 0.6 + rand(5) * 0.8,
+        });
+      }
+
+      // Bench
+      if (rand(6) > 0.6) {
+        const angle = rand(7) * Math.PI * 2;
+        const dist = b.width * 0.8 + 1.8;
+        benches.push({
+          pos: [
+            b.position[0] + Math.cos(angle) * dist,
+            0,
+            b.position[2] + Math.sin(angle) * dist,
+          ],
+          rot: rand(8) * Math.PI * 2,
+        });
+      }
+    }
+
+    return { lamps, trees, benches };
+  }, [buildings]);
+
+  return (
+    <group>
+      {items.lamps.map((pos, i) => <StreetLamp key={`lamp-${i}`} position={pos} />)}
+      {items.trees.map((t, i) => <LowPolyTree key={`tree-${i}`} position={t.pos} scale={t.scale} />)}
+      {items.benches.map((b, i) => <StreetBench key={`bench-${i}`} position={b.pos} rotation={b.rot} />)}
+    </group>
+  );
+}
+
 function DustParticles() {
   const count = 50;
   const ref = useRef<THREE.Points>(null);
@@ -367,6 +503,8 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
       <AnimatedGrid buildings={buildings} />
       <FloatingParticles />
       <DustParticles />
+
+      <StreetFurniture buildings={buildings} />
 
       {buildings.map((b, i) => (
         <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
