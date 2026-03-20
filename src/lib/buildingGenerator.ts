@@ -163,7 +163,9 @@ export function generateBuildingParams(
 
   // Deterministic random angle and spread within district
   const angle = seededRand(index * 73 + 17) * Math.PI * 2;
-  const spread = seededRand(index * 137 + 53) * district.radius * distanceFactor;
+  const minSpread = 3 + index * 0.5; // minimum distance from center to prevent stacking
+  const rawSpread = seededRand(index * 137 + 53) * district.radius * distanceFactor;
+  const spread = Math.max(minSpread, rawSpread);
 
   const x = district.center[0] + Math.cos(angle) * spread;
   const z = district.center[1] + Math.sin(angle) * spread;
@@ -210,10 +212,16 @@ export function generateDemoBuildings(profiles: SpotifyProfile[]): BuildingParam
         }
       }
       if (!overlapping) break;
+      // Nudge outward with some angular variation to avoid all going same direction
       const district = getDistrict(params.profile.topGenres);
-      const angle = Math.atan2(z - district.center[1], x - district.center[0]);
-      x += Math.cos(angle) * 2;
-      z += Math.sin(angle) * 2;
+      const dx = x - district.center[0];
+      const dz = z - district.center[1];
+      const atCenter = Math.abs(dx) < 0.5 && Math.abs(dz) < 0.5;
+      const nudgeAngle = atCenter
+        ? seededRand(i * 31 + attempts * 7) * Math.PI * 2  // random direction if at center
+        : Math.atan2(dz, dx) + (seededRand(attempts * 13 + i) - 0.5) * 0.8; // outward with jitter
+      x += Math.cos(nudgeAngle) * 3;
+      z += Math.sin(nudgeAngle) * 3;
       attempts++;
     }
 
