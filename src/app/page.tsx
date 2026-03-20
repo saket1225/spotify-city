@@ -166,12 +166,21 @@ function SkylineLoader({ stats }: { stats: string | null }) {
 
 /* ── Landing hero: title + sign in + demo city behind ── */
 function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
+  const [cityCount, setCityCount] = useState(12847);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCityCount((c) => c + Math.floor(Math.random() * 3) + 1);
+    }, 2000 + Math.random() * 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto">
-      {/* Dark vignette overlay - more transparent to show city */}
+      {/* Dark vignette overlay - darker edges, transparent center */}
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.3) 0%, rgba(8,9,10,0.6) 50%, rgba(8,9,10,0.7) 100%)' }}
+        style={{ background: 'radial-gradient(ellipse 60% 50% at center, rgba(8,9,10,0.15) 0%, rgba(8,9,10,0.5) 40%, rgba(8,9,10,0.8) 70%, rgba(8,9,10,0.92) 100%)' }}
       />
 
       {/* Hero section */}
@@ -181,6 +190,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
             className="font-pixel text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-[0.25em] text-[#1DB954]"
             style={{
               textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
+              animation: 'fadeScaleIn 0.8s ease-out',
             }}
           >
             SPOTIFY CITY
@@ -190,9 +200,13 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
             Your music taste, visualized as a city.
           </p>
 
+          <p className="text-sm text-gray-500 opacity-50" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+            {cityCount.toLocaleString()} cities built
+          </p>
+
           <button
             onClick={() => signIn('spotify')}
-            className="mt-4 flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 rounded-full text-sm sm:text-base font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
+            className="mt-4 flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 rounded-full text-sm sm:text-base font-semibold tracking-wide transition-all duration-200 hover:scale-[1.03] hover:shadow-lg hover:shadow-[#1DB954]/30 active:scale-95"
             style={{
               background: '#1DB954',
               color: '#000',

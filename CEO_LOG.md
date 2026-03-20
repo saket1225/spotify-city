@@ -133,9 +133,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Added bottom-left legend: "↕ Height = Listening Hours" and "↔ Width = Genre Diversity". Enhanced stats bar to show tallest building name + hours. Hidden on mobile and screenshot mode.
 **Result:** Shipped. gitcity-level clarity about what dimensions mean.
 
+## Decision #27 - Building Construction Animation (Mar 21, 2026)
+**Problem:** Buildings just appeared instantly - no wow moment.
+**Decision:** Staggered elastic construction animation on city reveal. Buildings grow from scaleY=0 to 1 over 600ms with elastic overshoot. Staggered by distance from center (~3.5s total). Single useFrame timer, per-building flags completion to stop checking.
+**Result:** Shipped. Satisfying city "building up" effect on first load. Zero ongoing perf cost.
+
 ---
 
 ## Backlog (prioritized)
-1. Animated building construction on first load
-2. Landing page polish - make hero more impactful
-3. Instanced meshes for distant buildings
+1. Landing page polish - make hero more impactful
+2. Instanced meshes for distant buildings
+3. Better profile card design
