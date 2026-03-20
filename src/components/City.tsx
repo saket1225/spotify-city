@@ -15,6 +15,16 @@ import KeyboardShortcuts from './KeyboardShortcuts';
 import { playBuildingClick, playModeSwitch } from '@/lib/uiSounds';
 import { GENRE_DISTRICTS } from '@/lib/buildingGenerator';
 
+/* ── Construction animation elapsed time tracker ── */
+function ConstructionTimer({ revealTime, elapsedRef }: { revealTime: number | null; elapsedRef: React.MutableRefObject<number> }) {
+  useFrame(() => {
+    if (revealTime !== null) {
+      elapsedRef.current = performance.now() - revealTime;
+    }
+  });
+  return null;
+}
+
 function detectWebGL(): boolean {
   try {
     const canvas = document.createElement('canvas');
@@ -33,6 +43,7 @@ interface CityProps {
   onIntroComplete?: () => void;
   focusPosition?: [number, number, number] | null;
   hideControls?: boolean;
+  revealTime?: number | null;
 }
 
 /* ── Time-of-day color presets ── */
@@ -1124,7 +1135,8 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 }
 
 /* ── Main City export ── */
-export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
+export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls, revealTime }: CityProps) {
+  const constructionElapsedRef = useRef(0);
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
   const [autoCycle, setAutoCycle] = useState<boolean>(() => {
@@ -1411,13 +1423,21 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         <WeatherParticles time={time} />
         <StreetFurniture buildings={buildings} />
 
-        {buildings.map((b, i) => (
-          <Building
-            key={b.profile.id || i}
-            params={b}
-            onClick={handleBuildingDoubleClick}
-          />
-        ))}
+        <ConstructionTimer revealTime={revealTime ?? null} elapsedRef={constructionElapsedRef} />
+        {buildings.map((b, i) => {
+          const dist = Math.sqrt(b.position[0] * b.position[0] + b.position[2] * b.position[2]);
+          const maxDist = 120;
+          const delay = (Math.min(dist, maxDist) / maxDist) * 3500;
+          return (
+            <Building
+              key={b.profile.id || i}
+              params={b}
+              onClick={handleBuildingDoubleClick}
+              constructionDelay={delay}
+              constructionElapsedRef={revealTime !== null ? constructionElapsedRef : undefined}
+            />
+          );
+        })}
 
         <FloatingLabels buildings={buildings} visible={cameraMode === 'orbit' && introComplete} />
         <DistrictLabels visible={cameraMode === 'orbit' && introComplete} />

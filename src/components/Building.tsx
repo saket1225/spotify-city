@@ -9,6 +9,8 @@ import { BuildingParams, BuildingStyle } from '@/types';
 interface BuildingProps {
   params: BuildingParams;
   onClick: (params: BuildingParams) => void;
+  constructionDelay?: number;
+  constructionElapsedRef?: React.MutableRefObject<number>;
 }
 
 function seededRandom(seed: number) {
@@ -1539,7 +1541,11 @@ function ModernVariantB({ height, width, depth, primaryColor, secondaryColor, ac
 }
 
 /* ── Main Building Component ── */
-function Building({ params, onClick }: BuildingProps) {
+function elasticOut(t: number): number {
+  return Math.sin(-13 * (t + 1) * Math.PI / 2) * Math.pow(2, -10 * t) + 1;
+}
+
+function Building({ params, onClick, constructionDelay = 0, constructionElapsedRef }: BuildingProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile, isCurrentUser, dimmed, highlighted } = params;
@@ -1575,10 +1581,32 @@ function Building({ params, onClick }: BuildingProps) {
   }, [style, height, width, depth, effectivePrimary, secondaryColor, effectiveAccent, seed, isCurrentUser]);
 
   const isIdleRef = useRef(false);
+  const constructionDoneRef = useRef(!constructionElapsedRef);
 
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
+
+    // Construction animation
+    if (constructionElapsedRef && !constructionDoneRef.current) {
+      const elapsed = constructionElapsedRef.current;
+      const DURATION = 600;
+      if (elapsed < constructionDelay) {
+        groupRef.current.scale.y = 0.001;
+        groupRef.current.position.y = -height * 0.5;
+        return;
+      }
+      const progress = Math.min((elapsed - constructionDelay) / DURATION, 1);
+      const scaleY = elasticOut(progress);
+      groupRef.current.scale.y = scaleY;
+      groupRef.current.position.y = (scaleY - 1) * height * 0.5;
+      if (progress >= 1) {
+        constructionDoneRef.current = true;
+        groupRef.current.scale.y = 1;
+        groupRef.current.position.y = 0;
+      }
+      return;
+    }
 
     // Frame-skipping: if building is idle (not hovered, not highlighted, not dimming, scale ~1), skip
     const opacitySettled = Math.abs(opacityRef.current - (dimmed ? 0.15 : 1)) < 0.01;

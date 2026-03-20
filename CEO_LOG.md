@@ -128,9 +128,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Floating district names (POP, ROCK, etc) at y=35 using Silkscreen font, white at 0.4 opacity with glow. Semi-transparent colored ring meshes on the ground at each district center. Orbit-mode only.
 **Result:** Shipped. Genre neighborhoods are clearly identified.
 
+## Decision #26 - Metrics Legend & Enhanced Stats (Mar 21, 2026)
+**Problem:** Users didn't know what building dimensions meant. Stats bar was generic.
+**Decision:** Added bottom-left legend: "↕ Height = Listening Hours" and "↔ Width = Genre Diversity". Enhanced stats bar to show tallest building name + hours. Hidden on mobile and screenshot mode.
+**Result:** Shipped. gitcity-level clarity about what dimensions mean.
+
 ---
 
 ## Backlog (prioritized)
-1. Simple comparison metrics legend (height = hours, width = genres)
-2. Animated building construction on first load
-3. Landing page polish - make hero more impactful
+1. Animated building construction on first load
+2. Landing page polish - make hero more impactful
+3. Instanced meshes for distant buildings

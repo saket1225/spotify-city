@@ -238,6 +238,8 @@ export default function Home() {
   const [captureFlash, setCaptureFlash] = useState(false);
   const [onboardingTip, setOnboardingTip] = useState(-1); // -1 = not started, 0/1/2 = tip index, 3 = done
   const [statsOpen, setStatsOpen] = useState(false);
+  const [cityRevealTime, setCityRevealTime] = useState<number | null>(null);
+  const constructionDoneRef = useRef(false);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -294,7 +296,10 @@ export default function Home() {
 
   // Auto-dismiss hero when already authenticated
   useEffect(() => {
-    if (status === 'authenticated') setHeroVisible(false);
+    if (status === 'authenticated') {
+      setHeroVisible(false);
+      if (!constructionDoneRef.current) { setCityRevealTime(performance.now()); constructionDoneRef.current = true; }
+    }
   }, [status]);
 
   // Onboarding tips for first-time users
@@ -368,7 +373,7 @@ export default function Home() {
 
       {/* Hero Overlay */}
       {!loading && heroVisible && (
-        <HeroOverlay onExploreDemo={() => { setHeroVisible(false); setCityLoading(true); setTimeout(() => setCityLoading(false), 3000); }} />
+        <HeroOverlay onExploreDemo={() => { setHeroVisible(false); if (!constructionDoneRef.current) { setCityRevealTime(performance.now()); constructionDoneRef.current = true; } setCityLoading(true); setTimeout(() => setCityLoading(false), 3000); }} />
       )}
 
       {/* City loading indicator */}
@@ -408,6 +413,7 @@ export default function Home() {
           onBuildingClick={handleBuildingClick}
           focusPosition={focusPosition}
           hideControls={heroVisible || loading || screenshotMode}
+          revealTime={cityRevealTime}
         />
       </main>
 
