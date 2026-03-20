@@ -75,10 +75,16 @@
 **Decision:** Added 2 variants per genre (14 total new buildings). Deterministic selection via artist name hash. Crystalline shards, water towers, bell towers, domes, smokestacks, greenhouses, etc. Each with animation details.
 **Result:** Shipped. 21 total building types (3 per genre). Same artist always gets same building, but skylines now have real variety.
 
+## Decision #16 - Onboarding Tips (Mar 20, 2026)
+**Problem:** First-time users had no guidance on how to interact with the city.
+**Decision:** 3 sequential dark glass pill tips after hero dismissal (click buildings, WASD/touch explore, ? for shortcuts). Auto-advance every 3.5s, skip button, localStorage flag, mobile-aware text.
+**Result:** Shipped. Non-blocking tips that only show once. Clean and unobtrusive.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
-2. Intro tutorial / onboarding for new users
-3. Building click sound effects
-4. City stats dashboard (total buildings, genre breakdown)
+2. Building click sound effects
+3. City stats dashboard (total buildings, genre breakdown)
+4. Weather effects (rain, snow particles based on mood)
+5. Day/night auto-cycle option

@@ -12,6 +12,7 @@ import VirtualJoystick from './VirtualJoystick';
 import { BuildingParams } from '@/types';
 import { useAmbientSound, SpeakerButton } from './AmbientSound';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import { playBuildingClick, playModeSwitch } from '@/lib/uiSounds';
 
 function detectWebGL(): boolean {
   try {
@@ -999,6 +1000,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
     if (cameraMode === 'explore') {
       setFlyTarget([params.position[0], params.height, params.position[2]]);
     }
+    playBuildingClick(params.height);
     onBuildingClick(params);
   }, [cameraMode, onBuildingClick]);
 
@@ -1060,7 +1062,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
       {!hideControls && <div className="absolute top-[60px] right-3 sm:right-4 z-20 flex flex-col gap-1.5 sm:gap-1.5">
         {/* Camera mode toggle */}
         <button
-          onClick={() => setCameraMode(m => m === 'orbit' ? 'explore' : 'orbit')}
+          onClick={() => { playModeSwitch(); setCameraMode(m => m === 'orbit' ? 'explore' : 'orbit'); }}
           title={isExplore ? 'Switch to Orbit' : 'Switch to Explore (WASD)'}
           className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
           style={{

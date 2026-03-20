@@ -9,6 +9,7 @@ import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import ShareCard from '@/components/ShareCard';
 import confetti from 'canvas-confetti';
+import { playPanelClose, playScreenshotCapture } from '@/lib/uiSounds';
 
 const City = dynamic(() => import('@/components/City'), { ssr: false });
 
@@ -366,8 +367,8 @@ export default function Home() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (screenshotMode) { setScreenshotMode(false); return; }
-        if (selectedBuilding) { setSelectedBuilding(null); return; }
-        if (shareCardBuilding) { setShareCardBuilding(null); return; }
+        if (selectedBuilding) { playPanelClose(); setSelectedBuilding(null); return; }
+        if (shareCardBuilding) { playPanelClose(); setShareCardBuilding(null); return; }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -378,6 +379,7 @@ export default function Home() {
   const handleCapture = useCallback(() => {
     const canvas = document.querySelector('canvas') as HTMLCanvasElement | null;
     if (!canvas) return;
+    playScreenshotCapture();
     setCaptureFlash(true);
     setTimeout(() => setCaptureFlash(false), 200);
     canvas.toBlob((blob) => {
@@ -481,7 +483,7 @@ export default function Home() {
           profile={selectedBuilding.profile}
           building={selectedBuilding}
           allBuildings={allBuildings}
-          onClose={() => setSelectedBuilding(null)}
+          onClose={() => { playPanelClose(); setSelectedBuilding(null); }}
           onShare={handleShareFromProfile}
         />
       )}
@@ -490,7 +492,7 @@ export default function Home() {
       {shareCardBuilding && (
         <ShareCard
           profile={shareCardBuilding.profile}
-          onClose={() => setShareCardBuilding(null)}
+          onClose={() => { playPanelClose(); setShareCardBuilding(null); }}
         />
       )}
 
