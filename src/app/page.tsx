@@ -43,19 +43,33 @@ function fireConfetti() {
 function StatsBar({ buildings }: { buildings: BuildingParams[] }) {
   const stats = useMemo(() => {
     const totalHours = buildings.reduce((sum, b) => sum + (b.profile.estimatedListeningHours || 0), 0);
-    const genres = new Set(buildings.flatMap((b) => b.profile.topGenres || []));
+    let tallest = buildings[0];
+    for (const b of buildings) {
+      if ((b.profile.estimatedListeningHours || 0) > (tallest?.profile.estimatedListeningHours || 0)) tallest = b;
+    }
     return {
       listeners: buildings.length.toLocaleString(),
-      districts: genres.size,
       hours: totalHours.toLocaleString(),
+      tallestName: tallest?.profile.displayName || tallest?.profile.topArtists?.[0] || 'Unknown',
+      tallestHours: (tallest?.profile.estimatedListeningHours || 0).toLocaleString(),
     };
   }, [buildings]);
 
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-10">
       <p className="text-xs text-gray-500 tracking-wide">
-        {stats.listeners} listeners · {stats.districts} districts · {stats.hours} hours played
+        {stats.listeners} listeners · {stats.hours} total hours · tallest: {stats.tallestName} ({stats.tallestHours}h)
       </p>
+    </div>
+  );
+}
+
+/* ── Metrics legend ── */
+function MetricsLegend() {
+  return (
+    <div className="fixed bottom-5 left-5 z-10 hidden sm:flex flex-col gap-0.5 opacity-50">
+      <p className="text-[10px] text-gray-500 tracking-wide">↕ Height = Listening Hours</p>
+      <p className="text-[10px] text-gray-500 tracking-wide">↔ Width = Genre Diversity</p>
     </div>
   );
 }
@@ -397,9 +411,12 @@ export default function Home() {
         />
       </main>
 
-      {/* Bottom center stats bar */}
+      {/* Bottom center stats bar + metrics legend */}
       {!heroVisible && !loading && !screenshotMode && (
-        <StatsBar buildings={allBuildings} />
+        <>
+          <StatsBar buildings={allBuildings} />
+          <MetricsLegend />
+        </>
       )}
 
       {/* Floating Share button */}

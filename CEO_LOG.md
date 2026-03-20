@@ -123,10 +123,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Removed useFrame from 9 sub-building components (static animations). Added frame-skipping - idle buildings early-exit in 3 comparisons. Removed expensive window flicker loop. Only hovered/highlighted buildings do real work (~1-5 at a time).
 **Result:** Shipped. ~99% reduction in per-frame JS work from buildings.
 
+## Decision #25 - District Labels & Ground Rings (Mar 21, 2026)
+**Problem:** With 6 spread-out districts, users couldn't tell which area was which genre.
+**Decision:** Floating district names (POP, ROCK, etc) at y=35 using Silkscreen font, white at 0.4 opacity with glow. Semi-transparent colored ring meshes on the ground at each district center. Orbit-mode only.
+**Result:** Shipped. Genre neighborhoods are clearly identified.
+
 ---
 
 ## Backlog (prioritized)
 1. Simple comparison metrics legend (height = hours, width = genres)
 2. Animated building construction on first load
 3. Landing page polish - make hero more impactful
-4. District labels visible in the 3D world
