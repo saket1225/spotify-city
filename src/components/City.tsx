@@ -6,9 +6,12 @@ import { OrbitControls, Stars } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Building from './Building';
+import ExploreCamera from './CityCamera';
+import Minimap from './Minimap';
 import { BuildingParams } from '@/types';
 
 export type TimeOfDay = 'night' | 'dawn' | 'day' | 'sunset';
+export type CameraMode = 'orbit' | 'explore';
 
 interface CityProps {
   buildings: BuildingParams[];
@@ -754,10 +757,31 @@ function ExposureController({ time }: { time: TimeOfDay }) {
   return null;
 }
 
+/* ── Camera position tracker for minimap ── */
+function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number], rotY: number) => void }) {
+  const { camera } = useThree();
+  const callbackRef = useRef(onUpdate);
+  callbackRef.current = onUpdate;
+
+  useFrame(() => {
+    const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+    callbackRef.current(
+      [camera.position.x, camera.position.y, camera.position.z],
+      e.y
+    );
+  });
+
+  return null;
+}
+
 /* ── Main City export ── */
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
+  const [flyTarget, setFlyTarget] = useState<[number, number, number] | null>(null);
+  const [camPos, setCamPos] = useState<[number, number, number]>([30, 16, 30]);
+  const [camRotY, setCamRotY] = useState(0);
   const orbitRef = useRef<React.ComponentRef<typeof OrbitControls>>(null);
 
   const handleIntroComplete = useCallback(() => {
@@ -765,11 +789,30 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
     onIntroComplete?.();
   }, [onIntroComplete]);
 
+  const handleCameraUpdate = useCallback((pos: [number, number, number], rotY: number) => {
+    setCamPos(pos);
+    setCamRotY(rotY);
+  }, []);
+
+  const handleBuildingDoubleClick = useCallback((params: BuildingParams) => {
+    if (cameraMode === 'explore') {
+      setFlyTarget([params.position[0], params.height, params.position[2]]);
+    }
+    onBuildingClick(params);
+  }, [cameraMode, onBuildingClick]);
+
+  const handleMinimapClick = useCallback((building: BuildingParams) => {
+    if (cameraMode === 'explore') {
+      setFlyTarget([building.position[0], building.height, building.position[2]]);
+    }
+  }, [cameraMode]);
+
   const preset = TIME_PRESETS[time];
+  const isExplore = cameraMode === 'explore';
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Time-of-day toggle UI */}
+      {/* Controls UI */}
       <div style={{
         position: 'absolute',
         top: 60,
@@ -779,6 +822,36 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         flexDirection: 'column',
         gap: 6,
       }}>
+        {/* Camera mode toggle */}
+        <button
+          onClick={() => setCameraMode(m => m === 'orbit' ? 'explore' : 'orbit')}
+          title={isExplore ? 'Switch to Orbit' : 'Switch to Explore (WASD)'}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            border: isExplore ? '2px solid rgba(29,185,84,0.8)' : '1px solid rgba(255,255,255,0.1)',
+            background: isExplore ? 'rgba(29,185,84,0.15)' : 'rgba(8,9,10,0.7)',
+            backdropFilter: 'blur(10px)',
+            cursor: 'pointer',
+            fontSize: 14,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            color: isExplore ? '#1DB954' : 'rgba(255,255,255,0.5)',
+            fontWeight: 700,
+            fontFamily: 'system-ui',
+            boxShadow: isExplore ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
+          }}
+        >
+          {isExplore ? '🚶' : '🔄'}
+        </button>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 4px' }} />
+
+        {/* Time-of-day toggle */}
         {([
           { key: 'night', icon: '🌙', label: 'Night' },
           { key: 'dawn', icon: '🌅', label: 'Dawn' },
@@ -810,11 +883,45 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         ))}
       </div>
 
+      {/* WASD hint when in explore mode */}
+      {isExplore && introComplete && (
+        <div style={{
+          position: 'absolute',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 20,
+          background: 'rgba(8,9,10,0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: 10,
+          padding: '6px 14px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: 11,
+          fontFamily: 'system-ui',
+          whiteSpace: 'nowrap',
+        }}>
+          WASD move · Mouse drag look · Scroll altitude · Space↑ Shift↓ · Double-click building to fly
+        </div>
+      )}
+
+      {/* Minimap (explore mode only) */}
+      {isExplore && introComplete && (
+        <Minimap
+          buildings={buildings}
+          cameraPosition={camPos}
+          cameraRotation={camRotY}
+          onBuildingClick={handleMinimapClick}
+        />
+      )}
+
       <Canvas
         camera={{ position: [80, 50, 80], fov: 50 }}
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
       >
+        <CameraTracker onUpdate={handleCameraUpdate} />
+
         <SkyDome time={time} />
         <AnimatedFog time={time} />
         <AnimatedLighting time={time} />
@@ -832,11 +939,26 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         <StreetFurniture buildings={buildings} />
 
         {buildings.map((b, i) => (
-          <Building key={b.profile.id || i} params={b} onClick={onBuildingClick} />
+          <Building
+            key={b.profile.id || i}
+            params={b}
+            onClick={handleBuildingDoubleClick}
+          />
         ))}
 
         {!introComplete && <CinematicIntro onComplete={handleIntroComplete} />}
-        <SmartOrbitControls enabled={introComplete} orbitRef={orbitRef} />
+
+        {/* Camera controls: orbit or explore */}
+        {cameraMode === 'orbit' && (
+          <SmartOrbitControls enabled={introComplete} orbitRef={orbitRef} />
+        )}
+        {cameraMode === 'explore' && introComplete && (
+          <ExploreCamera
+            enabled={true}
+            flyTarget={flyTarget}
+            onFlyComplete={() => setFlyTarget(null)}
+          />
+        )}
 
         <AnimatedBloom time={time} />
       </Canvas>
