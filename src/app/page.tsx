@@ -8,6 +8,7 @@ import { generateBuildingParams } from '@/lib/buildingGenerator';
 import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import ShareCard from '@/components/ShareCard';
+import CityStats from '@/components/CityStats';
 import confetti from 'canvas-confetti';
 import { playPanelClose, playScreenshotCapture } from '@/lib/uiSounds';
 
@@ -277,6 +278,7 @@ export default function Home() {
   const [screenshotMode, setScreenshotMode] = useState(false);
   const [captureFlash, setCaptureFlash] = useState(false);
   const [onboardingTip, setOnboardingTip] = useState(-1); // -1 = not started, 0/1/2 = tip index, 3 = done
+  const [statsOpen, setStatsOpen] = useState(false);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -367,6 +369,7 @@ export default function Home() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (screenshotMode) { setScreenshotMode(false); return; }
+        if (statsOpen) { playPanelClose(); setStatsOpen(false); return; }
         if (selectedBuilding) { playPanelClose(); setSelectedBuilding(null); return; }
         if (shareCardBuilding) { playPanelClose(); setShareCardBuilding(null); return; }
       }
@@ -550,6 +553,36 @@ export default function Home() {
             <circle cx="12" cy="13" r="4"/>
           </svg>
         </button>
+      )}
+
+      {/* City Stats button */}
+      {!heroVisible && !loading && !screenshotMode && (
+        <button
+          onClick={() => setStatsOpen(true)}
+          title="City Stats"
+          className="fixed top-[60px] right-[108px] sm:right-[100px] z-20 w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+          style={{
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(8,9,10,0.7)',
+            backdropFilter: 'blur(10px)',
+            color: 'rgba(255,255,255,0.5)',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="12" width="4" height="9" rx="1" />
+            <rect x="10" y="7" width="4" height="14" rx="1" />
+            <rect x="17" y="3" width="4" height="18" rx="1" />
+          </svg>
+        </button>
+      )}
+
+      {/* City Stats Panel */}
+      {statsOpen && (
+        <CityStats
+          buildings={allBuildings}
+          cityName={userName ? `${userName}'s City` : 'Demo City'}
+          onClose={() => { playPanelClose(); setStatsOpen(false); }}
+        />
       )}
 
       {/* Onboarding tips */}

@@ -90,11 +90,16 @@
 **Decision:** 70 atmospheric particles that morph with time: night fireflies (golden glow), dawn mist (soft white), day dust motes (bright specks), sunset embers (orange). Additive blending, smooth lerp transitions matching existing system.
 **Result:** Shipped. City feels alive and atmospheric in every time of day.
 
+## Decision #19 - Auto-cycle Time of Day (Mar 20, 2026)
+**Problem:** Users had to manually switch time of day. No ambient mode.
+**Decision:** Circular arrow toggle below time buttons. Cycles night->dawn->day->sunset every 20s per phase. Spinning animation when active. Manual time click disables it. localStorage persistence.
+**Result:** Shipped. Ambient time cycling for lean-back viewing.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
 2. City stats dashboard (total buildings, genre breakdown)
-3. Day/night auto-cycle option
-4. Animated building construction on first load
-5. Genre district grouping (cluster same-genre buildings)
+3. Animated building construction on first load
+4. Genre district grouping (cluster same-genre buildings)
+5. Parallax depth on hero landing page
