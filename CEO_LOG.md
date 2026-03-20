@@ -113,11 +113,15 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Fixed 4 hydration bugs (share card responsive check, web share API check, isMobile check). Fixed share card container sizing. Wrapped Building component in React.memo to prevent 1200 unnecessary re-renders.
 **Result:** Shipped. Share card works, page renders cleanly, performance improved.
 
+## Decision #23 - Branding Refresh (Mar 21, 2026)
+**Problem:** UI was overdesigned - feature cards, scroll indicators, noisy ticker, thick glass panels.
+**Decision:** Stripped hero to just title + tagline + 2 buttons. Removed feature cards, scroll chevron, attribution, social proof ticker. Replaced personal stats with centered stats bar. Smaller control buttons. Subtler glass panels (less blur, less border). Top 10 floating labels instead of 5.
+**Result:** Shipped. Clean, minimal, gitcity-level clarity.
+
 ---
 
 ## Backlog (prioritized)
-1. Branding refresh - gitcity-level clean and viral
-2. Simple comparison metrics (height = hours, base = genres)
-3. Leaderboard view
-4. Animated building construction on first load
-5. Landing page redesign - cleaner, simpler hero
+1. Simple comparison metrics legend (height = hours, width = genres)
+2. Performance: instanced meshes for 1200 buildings
+3. Animated building construction on first load
+4. Landing page polish - make hero more impactful

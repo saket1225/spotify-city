@@ -129,21 +129,6 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 }) {
   const twist = seededRange(seed, 0.02, 0.06);
   const rings = Math.floor(height / 2.5);
-  const ringsRef = useRef<THREE.Group>(null);
-  const holoRef = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    if (ringsRef.current) {
-      ringsRef.current.children.forEach((ring, i) => {
-        ring.rotation.y += (0.002 + i * 0.001);
-      });
-    }
-    if (holoRef.current) {
-      (holoRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 1.5 + Math.sin(t * 1.5 + seed) * 1.0;
-      holoRef.current.rotation.y = t * 0.3;
-    }
-  });
 
   return (
     <group>
@@ -175,7 +160,7 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
       </mesh>
 
       {/* Floating LED rings - reduced torus segments */}
-      <group ref={ringsRef}>
+      <group>
       {Array.from({ length: rings }, (_, i) => {
         const y = 1.5 + i * (height / rings);
         const pulse = seededRandom(seed + i * 37) > 0.5;
@@ -196,7 +181,7 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 
       {/* Holographic top - NO pointLight beacon */}
       <group position={[0, height, 0]}>
-        <mesh ref={holoRef} position={[0, 0.8, 0]}>
+        <mesh position={[0, 0.8, 0]}>
           <octahedronGeometry args={[width * 0.35, 0]} />
           <meshPhysicalMaterial
             color={accentColor}
@@ -254,13 +239,6 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 function IndustrialFortress({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const warningLightRef = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    if (!warningLightRef.current) return;
-    const t = state.clock.elapsedTime;
-    (warningLightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5 + Math.sin(t * 4 + seed) * 1.5;
-  });
 
   return (
     <group>
@@ -366,7 +344,7 @@ function IndustrialFortress({ height, width, depth, primaryColor, secondaryColor
       })}
 
       {/* Warning light on top - emissive sphere only, NO pointLight */}
-      <mesh ref={warningLightRef} position={[0, height + 1.2, 0]}>
+      <mesh position={[0, height + 1.2, 0]}>
         <sphereGeometry args={[0.1, 8, 8]} />
         <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={3} />
       </mesh>
@@ -491,22 +469,6 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
   const segments = Math.max(4, Math.floor(height / 2));
-  const antennaLightRef = useRef<THREE.Mesh>(null);
-  const gardenRef = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime;
-    if (antennaLightRef.current) {
-      (antennaLightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.0 + Math.sin(t * 2 + seed) * 1.0;
-    }
-    if (gardenRef.current) {
-      gardenRef.current.children.forEach((child, i) => {
-        if (i === 0) return; // skip roof pad
-        child.rotation.z = Math.sin(t * 1.2 + i * 2 + seed) * 0.04;
-        child.rotation.x = Math.sin(t * 0.8 + i * 3 + seed) * 0.03;
-      });
-    }
-  });
 
   return (
     <group>
@@ -550,7 +512,7 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
       </mesh>
 
       {/* Rooftop garden */}
-      <group ref={gardenRef} position={[0, height + 0.05, 0]}>
+      <group position={[0, height + 0.05, 0]}>
         {/* Green roof pad */}
         <mesh position={[0, 0, 0]}>
           <boxGeometry args={[width * 0.9, 0.1, depth * 0.9]} />
@@ -618,7 +580,7 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
         <cylinderGeometry args={[0.03, 0.05, 2, 6]} />
         <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
       </mesh>
-      <mesh ref={antennaLightRef} position={[0, height + 2.1, 0]}>
+      <mesh position={[0, height + 2.1, 0]}>
         <sphereGeometry args={[0.06, 6, 6]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
       </mesh>
@@ -979,12 +941,6 @@ function DomeConservatory({ height, width, depth, primaryColor, secondaryColor, 
 function BellTower({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const bellRef = useRef<THREE.Group>(null);
-  useFrame((state) => {
-    if (bellRef.current) {
-      bellRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.5 + seed) * 0.08;
-    }
-  });
   return (
     <group>
       {/* Main narrow tower */}
@@ -1010,7 +966,7 @@ function BellTower({ height, width, depth, primaryColor, secondaryColor, accentC
         <meshPhysicalMaterial color={secondaryColor} roughness={0.3} metalness={0.6} />
       </mesh>
       {/* Swaying bell */}
-      <group ref={bellRef} position={[0, height * 0.85, 0]}>
+      <group position={[0, height * 0.85, 0]}>
         <mesh position={[0, 0, 0]}>
           <cylinderGeometry args={[0.12, 0.2, 0.2, 8, 1, true]} />
           <meshPhysicalMaterial color={accentColor} roughness={0.2} metalness={0.9} emissive={accentColor} emissiveIntensity={0.2} />
@@ -1035,12 +991,6 @@ function BellTower({ height, width, depth, primaryColor, secondaryColor, accentC
 function CrystallineShard({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const glowRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (glowRef.current) {
-      (glowRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.8 + Math.sin(state.clock.elapsedTime * 2.2 + seed) * 0.6;
-    }
-  });
   return (
     <group>
       {/* Main tilted shard */}
@@ -1054,7 +1004,7 @@ function CrystallineShard({ height, width, depth, primaryColor, secondaryColor, 
         <meshPhysicalMaterial color={secondaryColor} roughness={0.05} metalness={0.5} emissive={accentColor} emissiveIntensity={0.4} transparent opacity={0.75} />
       </mesh>
       {/* Glowing core */}
-      <mesh ref={glowRef} position={[0, height * 0.6, 0]}>
+      <mesh position={[0, height * 0.6, 0]}>
         <octahedronGeometry args={[width * 0.25, 0]} />
         <meshPhysicalMaterial color={accentColor} roughness={0.0} metalness={1.0} emissive={accentColor} emissiveIntensity={1.2} transparent opacity={0.9} />
       </mesh>
@@ -1073,12 +1023,6 @@ function CrystallineShard({ height, width, depth, primaryColor, secondaryColor, 
 function FloatingPlatform({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const topRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (topRef.current) {
-      topRef.current.position.y = height * 0.88 + Math.sin(state.clock.elapsedTime * 1.3 + seed) * 0.18;
-    }
-  });
   const tiers = 4;
   return (
     <group>
@@ -1095,7 +1039,7 @@ function FloatingPlatform({ height, width, depth, primaryColor, secondaryColor, 
         );
       })}
       {/* Bobbing top tier */}
-      <mesh ref={topRef} position={[0, height * 0.88, 0]}>
+      <mesh position={[0, height * 0.88, 0]}>
         <cylinderGeometry args={[width * 0.35, width * 0.37, height * 0.14, 8]} />
         <meshPhysicalMaterial color={accentColor} roughness={0.05} metalness={0.8} emissive={accentColor} emissiveIntensity={0.6} />
       </mesh>
@@ -1166,12 +1110,6 @@ function BrutalistBunker({ height, width, depth, primaryColor, secondaryColor, a
 function SmokestackFactory({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const lightRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (lightRef.current) {
-      (lightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.2 + Math.sin(state.clock.elapsedTime * 3 + seed) * 1.2;
-    }
-  });
   return (
     <group>
       {/* Box base factory */}
@@ -1205,7 +1143,7 @@ function SmokestackFactory({ height, width, depth, primaryColor, secondaryColor,
         );
       })}
       {/* Warning light */}
-      <mesh ref={lightRef} position={[0, height + 0.5, 0]}>
+      <mesh position={[0, height + 0.5, 0]}>
         <sphereGeometry args={[0.12, 6, 6]} />
         <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={2} />
       </mesh>
@@ -1276,12 +1214,6 @@ function WaterTowerBuilding({ height, width, depth, primaryColor, secondaryColor
 function BillboardBuilding({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const billboardRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (billboardRef.current) {
-      (billboardRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.6 + Math.sin(state.clock.elapsedTime * 1.8 + seed) * 0.5;
-    }
-  });
   return (
     <group>
       {/* Main box */}
@@ -1297,7 +1229,7 @@ function BillboardBuilding({ height, width, depth, primaryColor, secondaryColor,
         </mesh>
       ))}
       {/* Billboard panel */}
-      <mesh ref={billboardRef} position={[0, height + 1.3, 0]}>
+      <mesh position={[0, height + 1.3, 0]}>
         <boxGeometry args={[width * 0.75, 0.55, 0.05]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} />
       </mesh>
@@ -1377,12 +1309,6 @@ function BubblyDome({ height, width, depth, primaryColor, secondaryColor, accent
 function NeonMarquee({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
-  const ringRef = useRef<THREE.Mesh>(null);
-  useFrame((state) => {
-    if (ringRef.current) {
-      ringRef.current.rotation.y = state.clock.elapsedTime * 0.5;
-    }
-  });
   const segments = Math.max(4, Math.floor(height / 2));
   return (
     <group>
@@ -1399,7 +1325,7 @@ function NeonMarquee({ height, width, depth, primaryColor, secondaryColor, accen
         );
       })}
       {/* Rotating ring around middle */}
-      <mesh ref={ringRef} position={[0, height * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, height * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[Math.max(width, depth) * 0.72, 0.07, 4, 14]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
       </mesh>
@@ -1648,9 +1574,21 @@ function Building({ params, onClick }: BuildingProps) {
     meshesRef.current = [];
   }, [style, height, width, depth, effectivePrimary, secondaryColor, effectiveAccent, seed, isCurrentUser]);
 
+  const isIdleRef = useRef(false);
+
   useFrame((state) => {
     if (!groupRef.current) return;
     const t = state.clock.elapsedTime;
+
+    // Frame-skipping: if building is idle (not hovered, not highlighted, not dimming, scale ~1), skip
+    const opacitySettled = Math.abs(opacityRef.current - (dimmed ? 0.15 : 1)) < 0.01;
+    const scaleSettled = Math.abs(groupRef.current.scale.x - 1) < 0.005;
+    if (!hovered && !highlighted && opacitySettled && scaleSettled) {
+      if (isIdleRef.current) return; // already idle, skip frame
+      isIdleRef.current = true;
+    } else {
+      isIdleRef.current = false;
+    }
 
     const pulseScale = highlighted ? Math.sin(t * 3) * 0.03 : 0;
     const targetScale = hovered ? 1.04 : 1 + pulseScale;
@@ -1662,40 +1600,26 @@ function Building({ params, onClick }: BuildingProps) {
     const targetOpacity = dimmed ? 0.15 : 1;
     opacityRef.current += (targetOpacity - opacityRef.current) * 0.06;
 
-    // Collect meshes once, then iterate the cached array
-    if (!meshesCached.current) {
-      meshesRef.current = [];
-      groupRef.current.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material) {
-          meshesRef.current.push(child);
-        }
-      });
-      meshesCached.current = true;
-    }
-
-    const meshes = meshesRef.current;
-    for (let i = 0, len = meshes.length; i < len; i++) {
-      const mat = meshes[i].material as THREE.Material & { opacity: number };
-      if (mat.opacity !== undefined) {
-        if (!mat.userData.baseOpacity) mat.userData.baseOpacity = mat.opacity;
-        mat.transparent = true;
-        mat.opacity = Math.min(mat.userData.baseOpacity, opacityRef.current);
+    // Only update mesh opacity when actively transitioning
+    if (!opacitySettled) {
+      // Collect meshes once, then iterate the cached array
+      if (!meshesCached.current) {
+        meshesRef.current = [];
+        groupRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            meshesRef.current.push(child);
+          }
+        });
+        meshesCached.current = true;
       }
-    }
 
-    // Window flicker - ambient idle animation
-    if (!dimmed) {
+      const meshes = meshesRef.current;
       for (let i = 0, len = meshes.length; i < len; i++) {
-        const mat = meshes[i].material as any;
-        if (mat.emissiveIntensity !== undefined) {
-          if (mat.userData.baseEmissive === undefined) {
-            mat.userData.baseEmissive = mat.emissiveIntensity;
-          }
-          const flickerSeed = seededRandom(seed + i * 31);
-          if (flickerSeed < 0.15 && mat.userData.baseEmissive > 0.2 && mat.userData.baseEmissive < 2.5) {
-            const flicker = Math.sin(t * (2 + flickerSeed * 4) + i * 7) * 0.2;
-            mat.emissiveIntensity = mat.userData.baseEmissive * (1 + flicker);
-          }
+        const mat = meshes[i].material as THREE.Material & { opacity: number };
+        if (mat.opacity !== undefined) {
+          if (!mat.userData.baseOpacity) mat.userData.baseOpacity = mat.opacity;
+          mat.transparent = true;
+          mat.opacity = Math.min(mat.userData.baseOpacity, opacityRef.current);
         }
       }
     }
