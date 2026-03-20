@@ -39,35 +39,23 @@ function fireConfetti() {
   requestAnimationFrame(frame);
 }
 
-/* ── Social proof ticker ── */
-function SocialTicker({ buildings }: { buildings: BuildingParams[] }) {
-  const messages = useMemo(() => {
-    const msgs: string[] = [];
-    for (const b of buildings) {
-      const p = b.profile;
-      const genre = p.topGenres?.[0] || 'music';
-      msgs.push(`🏙️ ${p.displayName} built a ${genre} tower`);
-      if (p.estimatedListeningHours > 1000) {
-        msgs.push(`🎵 ${p.displayName} has listened for ${p.estimatedListeningHours.toLocaleString()} hours`);
-      }
-      msgs.push(`🎸 ${p.displayName} joined the city`);
-    }
-    return msgs;
+/* ── Bottom stats bar ── */
+function StatsBar({ buildings }: { buildings: BuildingParams[] }) {
+  const stats = useMemo(() => {
+    const totalHours = buildings.reduce((sum, b) => sum + (b.profile.estimatedListeningHours || 0), 0);
+    const genres = new Set(buildings.flatMap((b) => b.profile.topGenres || []));
+    return {
+      listeners: buildings.length.toLocaleString(),
+      districts: genres.size,
+      hours: totalHours.toLocaleString(),
+    };
   }, [buildings]);
 
-  const text = messages.join('  ·  ') + '  ·  ' + messages.join('  ·  ');
-
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-10 overflow-hidden whitespace-nowrap"
-      style={{ opacity: 0.35 }}
-    >
-      <div
-        className="inline-block animate-ticker hover:[animation-play-state:paused] py-2 text-xs text-gray-400 tracking-wide"
-        style={{ paddingLeft: '100%' }}
-      >
-        {text}
-      </div>
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-10">
+      <p className="text-xs text-gray-500 tracking-wide">
+        {stats.listeners} listeners · {stats.districts} districts · {stats.hours} hours played
+      </p>
     </div>
   );
 }
@@ -162,13 +150,6 @@ function SkylineLoader({ stats }: { stats: string | null }) {
   );
 }
 
-/* ── Feature cards data ── */
-const FEATURES = [
-  { emoji: '\u{1F3D9}\uFE0F', title: 'Unique Buildings', desc: 'Each artist becomes a distinct building styled by their genre' },
-  { emoji: '\u{1F305}', title: 'Dynamic Scenes', desc: 'Experience your city in night, dawn, day, and sunset' },
-  { emoji: '\u{1F6B6}', title: 'Explore Mode', desc: 'Walk through your city with free camera controls' },
-];
-
 /* ── Landing hero: title + sign in + demo city behind ── */
 function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
   return (
@@ -192,11 +173,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
           </h1>
 
           <p className="text-gray-400 text-base sm:text-xl tracking-wide max-w-md font-light leading-relaxed">
-            Your music. Your city.
-          </p>
-
-          <p className="text-gray-600 text-xs sm:text-sm tracking-wider max-w-sm font-normal leading-relaxed">
-            Your listening history, visualized as a 3D city skyline
+            Your music taste, visualized as a city.
           </p>
 
           <button
@@ -228,38 +205,6 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
 
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(29,185,84,0.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px rgba(29,185,84,0.3))' }}>
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </div>
-
-        {/* Attribution */}
-        <p className="absolute bottom-4 right-5 text-gray-600 text-[10px] tracking-wider">
-          built by <span className="text-gray-500">@codanium_</span>
-        </p>
-      </div>
-
-      {/* Feature cards below the fold */}
-      <div className="relative px-4 sm:px-6 pb-16 sm:pb-20 -mt-8">
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="rounded-2xl p-5 sm:p-8 text-center transition-all duration-300 hover:scale-[1.03] hover:border-[#1DB954]/20"
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <div className="text-3xl mb-4">{f.emoji}</div>
-              <h3 className="text-white/90 text-base font-semibold tracking-wide mb-2">{f.title}</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -401,7 +346,6 @@ export default function Home() {
 
   // User's name and hours for the bottom stat
   const userName = userProfile?.displayName || (status === 'authenticated' ? session?.user?.name : null);
-  const userHours = userProfile?.estimatedListeningHours;
 
   return (
     <div className="film-grain relative flex h-screen w-screen flex-col overflow-hidden bg-[#08090a]">
@@ -453,15 +397,9 @@ export default function Home() {
         />
       </main>
 
-      {/* Bottom stat: user name + hours */}
-      {!heroVisible && !loading && !screenshotMode && userName && userHours && (
-        <div className="fixed bottom-5 left-5 z-10">
-          <p className="text-xs text-gray-500 tracking-wide">
-            <span className="text-gray-400 font-medium">{userName}</span>
-            {"'s City — "}
-            <span className="text-[#1DB954]">{userHours.toLocaleString()}h</span> listened
-          </p>
-        </div>
+      {/* Bottom center stats bar */}
+      {!heroVisible && !loading && !screenshotMode && (
+        <StatsBar buildings={allBuildings} />
       )}
 
       {/* Floating Share button */}
@@ -502,10 +440,6 @@ export default function Home() {
         />
       )}
 
-      {/* Social proof ticker (orbit mode only, city view) */}
-      {!heroVisible && !loading && !screenshotMode && (
-        <SocialTicker buildings={allBuildings} />
-      )}
 
       {/* Screenshot mode toolbar */}
       {screenshotMode && (
@@ -543,15 +477,15 @@ export default function Home() {
         <button
           onClick={() => setScreenshotMode(true)}
           title="Screenshot Mode"
-          className="fixed top-[60px] right-[60px] sm:right-[56px] z-20 w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+          className="fixed top-[60px] right-[60px] sm:right-[56px] z-20 w-8 h-8 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer"
           style={{
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(8,9,10,0.7)',
-            backdropFilter: 'blur(10px)',
-            color: 'rgba(255,255,255,0.5)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(8,9,10,0.6)',
+            backdropFilter: 'blur(8px)',
+            color: 'rgba(255,255,255,0.4)',
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
@@ -563,15 +497,15 @@ export default function Home() {
         <button
           onClick={() => setStatsOpen(true)}
           title="City Stats"
-          className="fixed top-[60px] right-[108px] sm:right-[100px] z-20 w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+          className="fixed top-[60px] right-[100px] sm:right-[92px] z-20 w-8 h-8 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-all duration-200 cursor-pointer"
           style={{
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(8,9,10,0.7)',
-            backdropFilter: 'blur(10px)',
-            color: 'rgba(255,255,255,0.5)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(8,9,10,0.6)',
+            backdropFilter: 'blur(8px)',
+            color: 'rgba(255,255,255,0.4)',
           }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="12" width="4" height="9" rx="1" />
             <rect x="10" y="7" width="4" height="14" rx="1" />
             <rect x="17" y="3" width="4" height="18" rx="1" />

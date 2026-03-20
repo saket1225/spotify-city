@@ -1013,18 +1013,18 @@ function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number],
 
 /* ── Floating artist labels (orbit mode, top 5 tallest) ── */
 function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; visible: boolean }) {
-  const top5 = useMemo(() => {
-    return [...buildings].sort((a, b) => b.height - a.height).slice(0, 5);
+  const top10 = useMemo(() => {
+    return [...buildings].sort((a, b) => b.height - a.height).slice(0, 10);
   }, [buildings]);
 
   const { camera } = useThree();
-  const [opacities, setOpacities] = useState<number[]>([0, 0, 0, 0, 0]);
+  const [opacities, setOpacities] = useState<number[]>(new Array(10).fill(0));
   const frameCount = useRef(0);
 
   useFrame(() => {
     if (!visible) return;
     if (++frameCount.current % 6 !== 0) return;
-    const newOp = top5.map((b) => {
+    const newOp = top10.map((b) => {
       const dist = camera.position.distanceTo(new THREE.Vector3(...b.position));
       if (dist > 40) return 0;
       if (dist < 20) return 1;
@@ -1037,7 +1037,7 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 
   return (
     <>
-      {top5.map((b, i) => (
+      {top10.map((b, i) => (
         <Html
           key={b.profile.id}
           position={[b.position[0], b.height + 1.5, b.position[2]]}

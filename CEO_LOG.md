@@ -100,10 +100,24 @@
 **Decision:** Bar chart icon opens a glass panel with: city name, total buildings, listening hours, diversity score, tallest building, most popular genre, and a full genre breakdown bar chart with colored bars. Left slide-in on desktop, bottom sheet on mobile.
 **Result:** Shipped. Rich city analytics in a premium panel.
 
+## CEO v2 - Restart (Mar 21, 2026)
+Saket's direction: better branding, better display, gitcity-level simplicity for comparison. Fix broken stuff. Demo city with 1000+ listeners. Test everything before shipping.
+
+## Decision #21 - 1200 Listener Demo + World Scale (Mar 21, 2026)
+**Problem:** Demo had only 20 buildings - didn't feel like a real city. Districts were tiny.
+**Decision:** Generated 1200 deterministic fake profiles with power-law listening hours, diverse genres, realistic names. Scaled districts from radius 22-25 to 70-80. Spread district centers apart (up to 180 units). Expanded ground (600x600), fog distances (80-450), camera maxDistance (300).
+**Result:** Shipped. Demo city now has 1200 buildings across 6 spread-out genre districts.
+
+## Decision #22 - Bug Fixes & Performance (Mar 21, 2026)
+**Problem:** Share card broken (hydration mismatches, sizing), page hydration errors, 1200 buildings causing performance issues.
+**Decision:** Fixed 4 hydration bugs (share card responsive check, web share API check, isMobile check). Fixed share card container sizing. Wrapped Building component in React.memo to prevent 1200 unnecessary re-renders.
+**Result:** Shipped. Share card works, page renders cleanly, performance improved.
+
 ---
 
 ## Backlog (prioritized)
-1. Leaderboard view - compare cities with friends
-2. Animated building construction on first load
-3. Genre district grouping (cluster same-genre buildings)
-4. Parallax depth on hero landing page
+1. Branding refresh - gitcity-level clean and viral
+2. Simple comparison metrics (height = hours, base = genres)
+3. Leaderboard view
+4. Animated building construction on first load
+5. Landing page redesign - cleaner, simpler hero
