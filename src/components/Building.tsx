@@ -11,6 +11,7 @@ interface BuildingProps {
   onClick: (params: BuildingParams) => void;
   constructionDelay?: number;
   constructionElapsedRef?: React.MutableRefObject<number>;
+  cameraPosition?: React.MutableRefObject<THREE.Vector3>;
 }
 
 function seededRandom(seed: number) {
@@ -1545,9 +1546,12 @@ function elasticOut(t: number): number {
   return Math.sin(-13 * (t + 1) * Math.PI / 2) * Math.pow(2, -10 * t) + 1;
 }
 
-function Building({ params, onClick, constructionDelay = 0, constructionElapsedRef }: BuildingProps) {
+const LOD_DISTANCE = 150;
+
+function Building({ params, onClick, constructionDelay = 0, constructionElapsedRef, cameraPosition }: BuildingProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
+  const [isDistant, setIsDistant] = useState(false);
   const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile, isCurrentUser, dimmed, highlighted } = params;
 
   const seed = position[0] * 73 + position[2] * 137;
@@ -1606,6 +1610,16 @@ function Building({ params, onClick, constructionDelay = 0, constructionElapsedR
         groupRef.current.position.y = 0;
       }
       return;
+    }
+
+    // LOD: check distance to camera every frame (cheap vector math)
+    if (cameraPosition) {
+      const cp = cameraPosition.current;
+      const dx = cp.x - position[0];
+      const dz = cp.z - position[2];
+      const distSq = dx * dx + dz * dz;
+      const shouldBeDistant = distSq > LOD_DISTANCE * LOD_DISTANCE;
+      if (shouldBeDistant !== isDistant) setIsDistant(shouldBeDistant);
     }
 
     // Frame-skipping: if building is idle (not hovered, not highlighted, not dimming, scale ~1), skip
@@ -1700,60 +1714,70 @@ function Building({ params, onClick, constructionDelay = 0, constructionElapsedR
       onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
       onClick={(e) => { e.stopPropagation(); onClick(params); }}
     >
-      {/* Ground glow - reduced segments: 12 → 8 */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <circleGeometry args={[Math.max(width, depth) * 1.2, 8]} />
-        <meshBasicMaterial color={effectivePrimary} transparent opacity={isCurrentUser ? 0.12 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
-      </mesh>
-
-      {buildingComponent}
-
-      {/* Landmark glow for current user - NO pointLight */}
-      {isCurrentUser && (
-        <mesh position={[0, height + 0.5, 0]}>
-          <sphereGeometry args={[width * 1.0, 6, 6]} />
-          <meshBasicMaterial color="#1DB954" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
-        </mesh>
-      )}
-
-      {/* Glow halo for tall buildings */}
-      {height > 15 && !isCurrentUser && (
-        <mesh position={[0, height + 0.5, 0]}>
-          <sphereGeometry args={[width * 0.8, 6, 6]} />
-          <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
-        </mesh>
-      )}
-
-      {/* Hover wireframe outline */}
-      {hovered && (
+      {/* LOD: distant buildings render as a simple colored box */}
+      {isDistant ? (
         <mesh position={[0, height * 0.5, 0]}>
-          <boxGeometry args={[width + 0.3, height + 0.3, depth + 0.3]} />
-          <meshBasicMaterial color={effectiveAccent} wireframe transparent opacity={0.25} />
+          <boxGeometry args={[width, height, depth]} />
+          <meshStandardMaterial color={effectivePrimary} emissive={effectivePrimary} emissiveIntensity={0.15} />
         </mesh>
-      )}
+      ) : (
+        <>
+          {/* Ground glow - reduced segments: 12 → 8 */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+            <circleGeometry args={[Math.max(width, depth) * 1.2, 8]} />
+            <meshBasicMaterial color={effectivePrimary} transparent opacity={isCurrentUser ? 0.12 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
+          </mesh>
 
-      {/* Hover label */}
-      {hovered && (
-        <Html position={[0, height + 2.5, 0]} center style={{ pointerEvents: 'none' }}>
-          <div style={{
-            background: 'rgba(8,9,10,0.9)',
-            backdropFilter: 'blur(10px)',
-            color: '#1DB954',
-            padding: '6px 14px',
-            borderRadius: '8px',
-            fontFamily: 'system-ui, sans-serif',
-            fontSize: '13px',
-            fontWeight: 600,
-            whiteSpace: 'nowrap',
-            border: '1px solid rgba(29,185,84,0.3)',
-            boxShadow: '0 0 20px rgba(29,185,84,0.2)',
-          }}>
-            <span style={{ marginRight: '6px' }}>{profile.displayName}</span>
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
-              {profile.estimatedListeningHours.toLocaleString()}h
-            </span>
-          </div>
-        </Html>
+          {buildingComponent}
+
+          {/* Landmark glow for current user - NO pointLight */}
+          {isCurrentUser && (
+            <mesh position={[0, height + 0.5, 0]}>
+              <sphereGeometry args={[width * 1.0, 6, 6]} />
+              <meshBasicMaterial color="#1DB954" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
+            </mesh>
+          )}
+
+          {/* Glow halo for tall buildings */}
+          {height > 15 && !isCurrentUser && (
+            <mesh position={[0, height + 0.5, 0]}>
+              <sphereGeometry args={[width * 0.8, 6, 6]} />
+              <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
+            </mesh>
+          )}
+
+          {/* Hover wireframe outline */}
+          {hovered && (
+            <mesh position={[0, height * 0.5, 0]}>
+              <boxGeometry args={[width + 0.3, height + 0.3, depth + 0.3]} />
+              <meshBasicMaterial color={effectiveAccent} wireframe transparent opacity={0.25} />
+            </mesh>
+          )}
+
+          {/* Hover label */}
+          {hovered && (
+            <Html position={[0, height + 2.5, 0]} center style={{ pointerEvents: 'none' }}>
+              <div style={{
+                background: 'rgba(8,9,10,0.9)',
+                backdropFilter: 'blur(10px)',
+                color: '#1DB954',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontFamily: 'system-ui, sans-serif',
+                fontSize: '13px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                border: '1px solid rgba(29,185,84,0.3)',
+                boxShadow: '0 0 20px rgba(29,185,84,0.2)',
+              }}>
+                <span style={{ marginRight: '6px' }}>{profile.displayName}</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px' }}>
+                  {profile.estimatedListeningHours.toLocaleString()}h
+                </span>
+              </div>
+            </Html>
+          )}
+        </>
       )}
     </group>
   );

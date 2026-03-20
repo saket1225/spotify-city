@@ -148,9 +148,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Stripped to essentials: huge listening hours stat (56px), rank below, building style label above name, subtle genre pills, gradient rank bar, ghost share button. Subtler glass panel. Removed color palette, top tracks, bar chart, stat grid.
 **Result:** Shipped. Clean, stat-focused profile card that tells you what matters.
 
+## Decision #30 - Share Card Refresh (Mar 21, 2026)
+**Problem:** Share card was overdesigned with QR codes, gradient overlays, multi-colored elements.
+**Decision:** Clean dark card (#0a0b0c). SPOTIFY CITY branding top, big user name, massive hours stat, "across X genres · Y artists", monochrome green genre pills, minimal skyline silhouette, subtle URL footer. Removed QR, gradients, noise, stats grid, top artists.
+**Result:** Shipped. Clean, screenshot-worthy card people would actually post.
+
 ---
 
 ## Backlog (prioritized)
 1. Instanced meshes for distant buildings
 2. City comparison view (side-by-side)
-3. Share card refresh to match new branding
+3. Loading/skeleton state improvements

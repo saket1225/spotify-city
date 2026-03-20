@@ -15,6 +15,17 @@ import KeyboardShortcuts from './KeyboardShortcuts';
 import { playBuildingClick, playModeSwitch } from '@/lib/uiSounds';
 import { GENRE_DISTRICTS } from '@/lib/buildingGenerator';
 
+/* ── Camera position tracker for LOD (updates every 10 frames) ── */
+function CameraPositionTracker({ posRef }: { posRef: React.MutableRefObject<THREE.Vector3> }) {
+  const frameCount = useRef(0);
+  useFrame(({ camera }) => {
+    if (++frameCount.current % 10 === 0) {
+      posRef.current.copy(camera.position);
+    }
+  });
+  return null;
+}
+
 /* ── Construction animation elapsed time tracker ── */
 function ConstructionTimer({ revealTime, elapsedRef }: { revealTime: number | null; elapsedRef: React.MutableRefObject<number> }) {
   useFrame(() => {
@@ -1137,6 +1148,7 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 /* ── Main City export ── */
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls, revealTime }: CityProps) {
   const constructionElapsedRef = useRef(0);
+  const cameraPosRef = useRef(new THREE.Vector3(30, 16, 30));
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
   const [autoCycle, setAutoCycle] = useState<boolean>(() => {
@@ -1424,6 +1436,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         <StreetFurniture buildings={buildings} />
 
         <ConstructionTimer revealTime={revealTime ?? null} elapsedRef={constructionElapsedRef} />
+        <CameraPositionTracker posRef={cameraPosRef} />
         {buildings.map((b, i) => {
           const dist = Math.sqrt(b.position[0] * b.position[0] + b.position[2] * b.position[2]);
           const maxDist = 120;
@@ -1435,6 +1448,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
               onClick={handleBuildingDoubleClick}
               constructionDelay={delay}
               constructionElapsedRef={revealTime !== null ? constructionElapsedRef : undefined}
+              cameraPosition={cameraPosRef}
             />
           );
         })}
