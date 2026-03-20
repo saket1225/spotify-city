@@ -40,11 +40,26 @@
 **Decision:** Virtual joystick for explore mode, responsive hero typography, bottom-sheet ProfileCard on mobile, 44px tap targets, scaled share card, hidden minimap on small screens.
 **Result:** Shipped. Full touch support with joystick, pinch zoom, responsive layouts across all components.
 
+## Decision #9 - Confetti Reveal + Floating Labels + Social Ticker (Mar 20, 2026)
+**Problem:** No wow moment on city reveal. No ambient context. No social proof feel.
+**Decision:** Confetti burst (200+ particles, Spotify green/gold/white) on loader finish. Floating artist labels on top 5 buildings (orbit mode, distance-based fade). Social proof ticker at bottom with building data messages.
+**Result:** Shipped. Confetti fires once per session. Labels visible within 40 units. Ticker scrolls at 0.35 opacity, pauses on hover.
+
+## Decision #10 - Alive City Animations (Mar 20, 2026)
+**Problem:** City felt static. Buildings were lifeless.
+**Decision:** Add idle animations - antenna blinks, LED ring rotation, holographic pulse/spin, window flicker (15% of windows), rooftop tree sway.
+**Result:** Shipped. All animations use sine waves on existing properties. Zero new lights, zero per-frame allocations.
+
+## Decision #11 - Ambient Sound Design (Mar 20, 2026)
+**Problem:** City was visually rich but completely silent. No audio atmosphere.
+**Decision:** Procedural Web Audio API soundscapes per time of day - night hum + crickets, dawn wind + birds, day bustle + shimmer, sunset warm drone + pad chord. Smooth 2.5s crossfades, starts muted, speaker toggle, localStorage persistence.
+**Result:** Shipped and deployed. Subtle ambient audio (0.07 volume) that changes with time of day. Zero audio files - all procedural.
+
 ---
 
 ## Backlog (prioritized)
-1. Sound design - ambient city sounds per time of day
-2. Social proof - live activity ticker (inspired by GitCity)
-3. Confetti/celebration on city reveal
-4. Typography polish - evaluate pixel font vs clean sans-serif
-5. Building name labels floating above buildings in the city
+1. Typography polish - evaluate pixel font vs clean sans-serif
+3. Leaderboard view - compare cities with friends
+4. More building variety - more genre-specific architecture
+5. Keyboard shortcuts overlay (? key)
+6. Screenshot mode (hide UI, high-res capture)

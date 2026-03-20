@@ -144,7 +144,7 @@ function SkylineLoader({ stats }: { stats: string | null }) {
           </svg>
         </div>
         <p
-          className="font-pixel text-lg tracking-wide"
+          className="text-sm sm:text-base tracking-widest uppercase font-medium"
           style={{
             color: phase === 3 ? '#1DB954' : '#9ca3af',
             transition: 'color 0.5s ease',
@@ -181,7 +181,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
       <div className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div className="flex flex-col items-center gap-5">
           <h1
-            className="font-pixel text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
+            className="font-pixel text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-[0.25em] text-[#1DB954]"
             style={{
               textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
             }}
@@ -189,11 +189,11 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
             SPOTIFY CITY
           </h1>
 
-          <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md font-light">
+          <p className="text-gray-400 text-base sm:text-xl tracking-wide max-w-md font-light leading-relaxed">
             Your music. Your city.
           </p>
 
-          <p className="text-gray-600 text-xs sm:text-sm tracking-wide max-w-sm font-light">
+          <p className="text-gray-600 text-xs sm:text-sm tracking-wider max-w-sm font-normal leading-relaxed">
             Your listening history, visualized as a 3D city skyline
           </p>
 

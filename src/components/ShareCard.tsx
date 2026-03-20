@@ -44,9 +44,9 @@ function PixelLogo() {
         <rect x="5" y="12" width="10" height="2" fill="#000" />
       </svg>
       <span style={{
-        fontFamily: '"Courier New", monospace',
-        fontSize: 14,
-        fontWeight: 900,
+        fontFamily: '"Silkscreen", monospace',
+        fontSize: 13,
+        fontWeight: 700,
         letterSpacing: 6,
         color: '#1DB954',
         textTransform: 'uppercase' as const,
@@ -156,7 +156,7 @@ function ShareCardContent({ profile }: { profile: SpotifyProfile }) {
       height: 960,
       position: 'relative',
       overflow: 'hidden',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       background: '#08090a',
     }}>
       {/* Gradient overlay */}
