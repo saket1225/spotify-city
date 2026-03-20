@@ -136,13 +136,16 @@ function lerpColor3(a: [number, number, number], b: [number, number, number], t:
 function SkyDome({ time }: { time: TimeOfDay }) {
   const matRef = useRef<THREE.ShaderMaterial>(null);
   const targetPreset = TIME_PRESETS[time];
+  const tmpVec3 = useRef(new THREE.Vector3());
 
   useFrame(() => {
     if (!matRef.current) return;
     const u = matRef.current.uniforms;
     const speed = 0.03;
-    u.horizonColor.value.lerp(new THREE.Vector3(...targetPreset.skyHorizon), speed);
-    u.zenithColor.value.lerp(new THREE.Vector3(...targetPreset.skyZenith), speed);
+    tmpVec3.current.set(...targetPreset.skyHorizon);
+    u.horizonColor.value.lerp(tmpVec3.current, speed);
+    tmpVec3.current.set(...targetPreset.skyZenith);
+    u.zenithColor.value.lerp(tmpVec3.current, speed);
   });
 
   const material = useMemo(() => {
@@ -185,7 +188,7 @@ function SkyDome({ time }: { time: TimeOfDay }) {
 
   return (
     <mesh>
-      <sphereGeometry args={[150, 32, 16]} />
+      <sphereGeometry args={[150, 16, 8]} />
       <shaderMaterial ref={matRef} {...material} attach="material" />
     </mesh>
   );
@@ -195,11 +198,12 @@ function SkyDome({ time }: { time: TimeOfDay }) {
 function AnimatedFog({ time }: { time: TimeOfDay }) {
   const fogRef = useRef<THREE.Fog>(null);
   const preset = TIME_PRESETS[time];
+  const tmpColor = useRef(new THREE.Color());
 
   useFrame(() => {
     if (!fogRef.current) return;
-    const target = new THREE.Color(preset.fog);
-    fogRef.current.color.lerp(target, 0.03);
+    tmpColor.current.set(preset.fog);
+    fogRef.current.color.lerp(tmpColor.current, 0.03);
     fogRef.current.near += (preset.fogNear - fogRef.current.near) * 0.03;
     fogRef.current.far += (preset.fogFar - fogRef.current.far) * 0.03;
   });
@@ -213,6 +217,8 @@ function AnimatedLighting({ time }: { time: TimeOfDay }) {
   const hemiRef = useRef<THREE.HemisphereLight>(null);
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const preset = TIME_PRESETS[time];
+  const tmpColor = useRef(new THREE.Color());
+  const tmpVec3 = useRef(new THREE.Vector3());
 
   useFrame(() => {
     const speed = 0.03;
@@ -220,14 +226,18 @@ function AnimatedLighting({ time }: { time: TimeOfDay }) {
       ambientRef.current.intensity += (preset.ambient - ambientRef.current.intensity) * speed;
     }
     if (hemiRef.current) {
-      hemiRef.current.color.lerp(new THREE.Color(preset.hemiSky), speed);
-      hemiRef.current.groundColor.lerp(new THREE.Color(preset.hemiGround), speed);
+      tmpColor.current.set(preset.hemiSky);
+      hemiRef.current.color.lerp(tmpColor.current, speed);
+      tmpColor.current.set(preset.hemiGround);
+      hemiRef.current.groundColor.lerp(tmpColor.current, speed);
       hemiRef.current.intensity += (preset.hemiIntensity - hemiRef.current.intensity) * speed;
     }
     if (dirRef.current) {
-      dirRef.current.color.lerp(new THREE.Color(preset.dirColor), speed);
+      tmpColor.current.set(preset.dirColor);
+      dirRef.current.color.lerp(tmpColor.current, speed);
       dirRef.current.intensity += (preset.dirIntensity - dirRef.current.intensity) * speed;
-      dirRef.current.position.lerp(new THREE.Vector3(...preset.dirPosition), speed);
+      tmpVec3.current.set(...preset.dirPosition);
+      dirRef.current.position.lerp(tmpVec3.current, speed);
     }
   });
 
@@ -237,8 +247,6 @@ function AnimatedLighting({ time }: { time: TimeOfDay }) {
       <hemisphereLight ref={hemiRef} args={['#1a1a3a', '#080810', 0.15]} />
       <directionalLight ref={dirRef} position={[15, 25, 10]} intensity={0.5} color="#e8e0ff" castShadow={time === 'day' || time === 'sunset'} />
       <pointLight position={[0, 20, 0]} intensity={0.4} color="#1DB954" distance={60} />
-      <pointLight position={[-20, 8, -20]} intensity={0.3} color="#4169E1" distance={40} />
-      <pointLight position={[20, 8, 20]} intensity={0.3} color="#FF69B4" distance={40} />
     </>
   );
 }
@@ -247,10 +255,12 @@ function AnimatedLighting({ time }: { time: TimeOfDay }) {
 function AnimatedGround({ time }: { time: TimeOfDay }) {
   const ref = useRef<THREE.MeshStandardMaterial>(null);
   const preset = TIME_PRESETS[time];
+  const tmpColor = useRef(new THREE.Color());
 
   useFrame(() => {
     if (!ref.current) return;
-    ref.current.color.lerp(new THREE.Color(preset.groundColor), 0.03);
+    tmpColor.current.set(preset.groundColor);
+    ref.current.color.lerp(tmpColor.current, 0.03);
   });
 
   return (
@@ -284,14 +294,14 @@ function CelestialBody({ time }: { time: TimeOfDay }) {
   return (
     <group ref={ref} position={[30, 60, -40]}>
       <mesh>
-        <sphereGeometry args={[isSun ? 4 : 3, 16, 16]} />
+        <sphereGeometry args={[isSun ? 4 : 3, 8, 8]} />
         <meshBasicMaterial
           color={isSun ? (time === 'sunset' ? '#ff8833' : time === 'dawn' ? '#ffaacc' : '#ffffee') : '#ddddff'}
         />
       </mesh>
       {/* Glow */}
       <mesh>
-        <sphereGeometry args={[isSun ? 8 : 5, 16, 16]} />
+        <sphereGeometry args={[isSun ? 8 : 5, 8, 8]} />
         <meshBasicMaterial
           color={isSun ? (time === 'sunset' ? '#ff6600' : '#ffffaa') : '#8888cc'}
           transparent opacity={0.08}
@@ -307,6 +317,8 @@ function CelestialBody({ time }: { time: TimeOfDay }) {
 function ShootingStars({ visible }: { visible: boolean }) {
   const count = 3;
   const meshRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const tmpPos = useRef(new THREE.Vector3());
+  const tmpLookAt = useRef(new THREE.Vector3());
 
   const meteors = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
@@ -342,9 +354,10 @@ function ShootingStars({ visible }: { visible: boolean }) {
 
       if (progress >= 0 && progress <= 1) {
         mesh.visible = true;
-        const pos = m.startPos.clone().addScaledVector(m.direction, progress);
-        mesh.position.copy(pos);
-        mesh.lookAt(pos.clone().add(m.direction));
+        tmpPos.current.copy(m.startPos).addScaledVector(m.direction, progress);
+        mesh.position.copy(tmpPos.current);
+        tmpLookAt.current.copy(tmpPos.current).add(m.direction);
+        mesh.lookAt(tmpLookAt.current);
         const fade = progress < 0.2 ? progress / 0.2 : progress > 0.7 ? (1 - progress) / 0.3 : 1;
         (mesh.material as THREE.MeshBasicMaterial).opacity = fade * 0.9;
         mesh.scale.set(1, 1, 1 + progress * 2);
@@ -369,6 +382,7 @@ function ShootingStars({ visible }: { visible: boolean }) {
 function AnimatedGrid({ buildings, time }: { buildings: BuildingParams[]; time: TimeOfDay }) {
   const ref = useRef<THREE.ShaderMaterial>(null);
   const preset = TIME_PRESETS[time];
+  const tmpColor = useRef(new THREE.Color());
 
   const buildingData = useMemo(() => {
     const maxBuildings = 32;
@@ -391,13 +405,14 @@ function AnimatedGrid({ buildings, time }: { buildings: BuildingParams[]; time: 
   useFrame((state) => {
     if (ref.current) {
       ref.current.uniforms.uTime.value = state.clock.elapsedTime;
-      ref.current.uniforms.uColor.value.lerp(new THREE.Color(preset.gridColor), 0.03);
+      tmpColor.current.set(preset.gridColor);
+      ref.current.uniforms.uColor.value.lerp(tmpColor.current, 0.03);
     }
   });
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-      <planeGeometry args={[200, 200, 200, 200]} />
+      <planeGeometry args={[200, 200, 100, 100]} />
       <shaderMaterial
         ref={ref}
         transparent
@@ -450,6 +465,7 @@ function FloatingParticles({ time }: { time: TimeOfDay }) {
   const ref = useRef<THREE.Points>(null);
   const matRef = useRef<THREE.PointsMaterial>(null);
   const preset = TIME_PRESETS[time];
+  const tmpColor = useRef(new THREE.Color());
 
   const [positions, speeds] = useMemo(() => {
     const pos = new Float32Array(count * 3);
@@ -477,7 +493,8 @@ function FloatingParticles({ time }: { time: TimeOfDay }) {
     }
     posAttr.needsUpdate = true;
     if (matRef.current) {
-      matRef.current.color.lerp(new THREE.Color(preset.particleColor), 0.03);
+      tmpColor.current.set(preset.particleColor);
+      matRef.current.color.lerp(tmpColor.current, 0.03);
     }
   });
 
@@ -528,67 +545,7 @@ function DustParticles() {
   );
 }
 
-/* ── Street Furniture: lamps, trees, benches ── */
-function StreetLamp({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.8, 0]}>
-        <cylinderGeometry args={[0.03, 0.04, 1.6, 6]} />
-        <meshPhysicalMaterial color="#333333" roughness={0.4} metalness={0.8} />
-      </mesh>
-      <mesh position={[0.15, 1.5, 0]} rotation={[0, 0, Math.PI / 6]}>
-        <cylinderGeometry args={[0.02, 0.02, 0.4, 4]} />
-        <meshPhysicalMaterial color="#333333" roughness={0.4} metalness={0.8} />
-      </mesh>
-      <mesh position={[0.25, 1.55, 0]}>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshStandardMaterial color="#ffeecc" emissive="#ffdd88" emissiveIntensity={2} />
-      </mesh>
-      <pointLight position={[0.25, 1.55, 0]} intensity={0.3} color="#ffdd88" distance={5} />
-    </group>
-  );
-}
-
-function LowPolyTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.3, 0]}>
-        <cylinderGeometry args={[0.04, 0.06, 0.6, 5]} />
-        <meshStandardMaterial color="#5a3a20" roughness={0.9} />
-      </mesh>
-      <mesh position={[0, 0.7, 0]}>
-        <coneGeometry args={[0.25, 0.5, 6]} />
-        <meshStandardMaterial color="#1a5a2a" emissive="#0a2a0a" emissiveIntensity={0.1} />
-      </mesh>
-      <mesh position={[0, 0.95, 0]}>
-        <coneGeometry args={[0.2, 0.4, 6]} />
-        <meshStandardMaterial color="#226633" emissive="#0a2a0a" emissiveIntensity={0.1} />
-      </mesh>
-    </group>
-  );
-}
-
-function StreetBench({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      <mesh position={[0, 0.15, 0]}>
-        <boxGeometry args={[0.5, 0.04, 0.15]} />
-        <meshPhysicalMaterial color="#5a3a1a" roughness={0.8} metalness={0.1} />
-      </mesh>
-      {[-0.2, 0.2].map((x) => (
-        <mesh key={x} position={[x, 0.07, 0]}>
-          <boxGeometry args={[0.03, 0.14, 0.12]} />
-          <meshPhysicalMaterial color="#444" roughness={0.5} metalness={0.7} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.28, -0.06]}>
-        <boxGeometry args={[0.5, 0.15, 0.02]} />
-        <meshPhysicalMaterial color="#5a3a1a" roughness={0.8} metalness={0.1} />
-      </mesh>
-    </group>
-  );
-}
-
+/* ── Street Furniture using InstancedMesh ── */
 function StreetFurniture({ buildings }: { buildings: BuildingParams[] }) {
   const items = useMemo(() => {
     const lamps: [number, number, number][] = [];
@@ -622,11 +579,179 @@ function StreetFurniture({ buildings }: { buildings: BuildingParams[] }) {
     return { lamps, trees, benches };
   }, [buildings]);
 
+  // Shared geometries and materials
+  const lampPoleGeo = useMemo(() => new THREE.CylinderGeometry(0.03, 0.04, 1.6, 6), []);
+  const lampArmGeo = useMemo(() => new THREE.CylinderGeometry(0.02, 0.02, 0.4, 4), []);
+  const lampGlobeGeo = useMemo(() => new THREE.SphereGeometry(0.06, 8, 8), []);
+  const lampPoleMat = useMemo(() => new THREE.MeshPhysicalMaterial({ color: '#333333', roughness: 0.4, metalness: 0.8 }), []);
+  const lampGlobeMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#ffeecc', emissive: '#ffdd88', emissiveIntensity: 2 }), []);
+
+  const trunkGeo = useMemo(() => new THREE.CylinderGeometry(0.04, 0.06, 0.6, 5), []);
+  const cone1Geo = useMemo(() => new THREE.ConeGeometry(0.25, 0.5, 6), []);
+  const cone2Geo = useMemo(() => new THREE.ConeGeometry(0.2, 0.4, 6), []);
+  const trunkMat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#5a3a20', roughness: 0.9 }), []);
+  const leaf1Mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#1a5a2a', emissive: '#0a2a0a', emissiveIntensity: 0.1 }), []);
+  const leaf2Mat = useMemo(() => new THREE.MeshStandardMaterial({ color: '#226633', emissive: '#0a2a0a', emissiveIntensity: 0.1 }), []);
+
+  const benchSeatGeo = useMemo(() => new THREE.BoxGeometry(0.5, 0.04, 0.15), []);
+  const benchLegGeo = useMemo(() => new THREE.BoxGeometry(0.03, 0.14, 0.12), []);
+  const benchBackGeo = useMemo(() => new THREE.BoxGeometry(0.5, 0.15, 0.02), []);
+  const benchWoodMat = useMemo(() => new THREE.MeshPhysicalMaterial({ color: '#5a3a1a', roughness: 0.8, metalness: 0.1 }), []);
+  const benchMetalMat = useMemo(() => new THREE.MeshPhysicalMaterial({ color: '#444', roughness: 0.5, metalness: 0.7 }), []);
+
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+
+  // Lamp instanced meshes
+  const lampPoleRef = useRef<THREE.InstancedMesh>(null);
+  const lampArmRef = useRef<THREE.InstancedMesh>(null);
+  const lampGlobeRef = useRef<THREE.InstancedMesh>(null);
+
+  // Tree instanced meshes
+  const trunkRef = useRef<THREE.InstancedMesh>(null);
+  const cone1Ref = useRef<THREE.InstancedMesh>(null);
+  const cone2Ref = useRef<THREE.InstancedMesh>(null);
+
+  // Bench instanced meshes
+  const benchSeatRef = useRef<THREE.InstancedMesh>(null);
+  const benchLeg1Ref = useRef<THREE.InstancedMesh>(null);
+  const benchLeg2Ref = useRef<THREE.InstancedMesh>(null);
+  const benchBackRef = useRef<THREE.InstancedMesh>(null);
+
+  useEffect(() => {
+    // Set lamp matrices
+    items.lamps.forEach((pos, i) => {
+      // Pole
+      if (lampPoleRef.current) {
+        dummy.position.set(pos[0], pos[1] + 0.8, pos[2]);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        lampPoleRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Arm
+      if (lampArmRef.current) {
+        dummy.position.set(pos[0] + 0.15, pos[1] + 1.5, pos[2]);
+        dummy.rotation.set(0, 0, Math.PI / 6);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        lampArmRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Globe
+      if (lampGlobeRef.current) {
+        dummy.position.set(pos[0] + 0.25, pos[1] + 1.55, pos[2]);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        lampGlobeRef.current.setMatrixAt(i, dummy.matrix);
+      }
+    });
+    if (lampPoleRef.current) lampPoleRef.current.instanceMatrix.needsUpdate = true;
+    if (lampArmRef.current) lampArmRef.current.instanceMatrix.needsUpdate = true;
+    if (lampGlobeRef.current) lampGlobeRef.current.instanceMatrix.needsUpdate = true;
+
+    // Set tree matrices
+    items.trees.forEach((t, i) => {
+      const s = t.scale;
+      // Trunk
+      if (trunkRef.current) {
+        dummy.position.set(t.pos[0], t.pos[1] + 0.3 * s, t.pos[2]);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(s, s, s);
+        dummy.updateMatrix();
+        trunkRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Cone 1
+      if (cone1Ref.current) {
+        dummy.position.set(t.pos[0], t.pos[1] + 0.7 * s, t.pos[2]);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(s, s, s);
+        dummy.updateMatrix();
+        cone1Ref.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Cone 2
+      if (cone2Ref.current) {
+        dummy.position.set(t.pos[0], t.pos[1] + 0.95 * s, t.pos[2]);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(s, s, s);
+        dummy.updateMatrix();
+        cone2Ref.current.setMatrixAt(i, dummy.matrix);
+      }
+    });
+    if (trunkRef.current) trunkRef.current.instanceMatrix.needsUpdate = true;
+    if (cone1Ref.current) cone1Ref.current.instanceMatrix.needsUpdate = true;
+    if (cone2Ref.current) cone2Ref.current.instanceMatrix.needsUpdate = true;
+
+    // Set bench matrices
+    items.benches.forEach((b, i) => {
+      const cos = Math.cos(b.rot);
+      const sin = Math.sin(b.rot);
+      // Seat
+      if (benchSeatRef.current) {
+        dummy.position.set(b.pos[0], b.pos[1] + 0.15, b.pos[2]);
+        dummy.rotation.set(0, b.rot, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        benchSeatRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Leg 1
+      if (benchLeg1Ref.current) {
+        dummy.position.set(b.pos[0] + cos * -0.2, b.pos[1] + 0.07, b.pos[2] + sin * -0.2);
+        dummy.rotation.set(0, b.rot, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        benchLeg1Ref.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Leg 2
+      if (benchLeg2Ref.current) {
+        dummy.position.set(b.pos[0] + cos * 0.2, b.pos[1] + 0.07, b.pos[2] + sin * 0.2);
+        dummy.rotation.set(0, b.rot, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        benchLeg2Ref.current.setMatrixAt(i, dummy.matrix);
+      }
+      // Back
+      if (benchBackRef.current) {
+        dummy.position.set(b.pos[0] + sin * 0.06, b.pos[1] + 0.28, b.pos[2] - cos * 0.06);
+        dummy.rotation.set(0, b.rot, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        benchBackRef.current.setMatrixAt(i, dummy.matrix);
+      }
+    });
+    if (benchSeatRef.current) benchSeatRef.current.instanceMatrix.needsUpdate = true;
+    if (benchLeg1Ref.current) benchLeg1Ref.current.instanceMatrix.needsUpdate = true;
+    if (benchLeg2Ref.current) benchLeg2Ref.current.instanceMatrix.needsUpdate = true;
+    if (benchBackRef.current) benchBackRef.current.instanceMatrix.needsUpdate = true;
+  }, [items, dummy]);
+
+  const lampCount = items.lamps.length;
+  const treeCount = items.trees.length;
+  const benchCount = items.benches.length;
+
   return (
     <group>
-      {items.lamps.map((pos, i) => <StreetLamp key={`lamp-${i}`} position={pos} />)}
-      {items.trees.map((t, i) => <LowPolyTree key={`tree-${i}`} position={t.pos} scale={t.scale} />)}
-      {items.benches.map((b, i) => <StreetBench key={`bench-${i}`} position={b.pos} rotation={b.rot} />)}
+      {lampCount > 0 && (
+        <>
+          <instancedMesh ref={lampPoleRef} args={[lampPoleGeo, lampPoleMat, lampCount]} />
+          <instancedMesh ref={lampArmRef} args={[lampArmGeo, lampPoleMat, lampCount]} />
+          <instancedMesh ref={lampGlobeRef} args={[lampGlobeGeo, lampGlobeMat, lampCount]} />
+        </>
+      )}
+      {treeCount > 0 && (
+        <>
+          <instancedMesh ref={trunkRef} args={[trunkGeo, trunkMat, treeCount]} />
+          <instancedMesh ref={cone1Ref} args={[cone1Geo, leaf1Mat, treeCount]} />
+          <instancedMesh ref={cone2Ref} args={[cone2Geo, leaf2Mat, treeCount]} />
+        </>
+      )}
+      {benchCount > 0 && (
+        <>
+          <instancedMesh ref={benchSeatRef} args={[benchSeatGeo, benchWoodMat, benchCount]} />
+          <instancedMesh ref={benchLeg1Ref} args={[benchLegGeo, benchMetalMat, benchCount]} />
+          <instancedMesh ref={benchLeg2Ref} args={[benchLegGeo, benchMetalMat, benchCount]} />
+          <instancedMesh ref={benchBackRef} args={[benchBackGeo, benchWoodMat, benchCount]} />
+        </>
+      )}
     </group>
   );
 }
@@ -738,8 +863,8 @@ function AnimatedBloom({ time }: { time: TimeOfDay }) {
         luminanceThreshold={preset.bloomThreshold}
         luminanceSmoothing={0.4}
         mipmapBlur
-        width={512}
-        height={512}
+        width={256}
+        height={256}
       />
     </EffectComposer>
   );
@@ -762,12 +887,15 @@ function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number],
   const { camera } = useThree();
   const callbackRef = useRef(onUpdate);
   callbackRef.current = onUpdate;
+  const frameCount = useRef(0);
+  const eulerRef = useRef(new THREE.Euler());
 
   useFrame(() => {
-    const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+    if (++frameCount.current % 3 !== 0) return;
+    eulerRef.current.setFromQuaternion(camera.quaternion, 'YXZ');
     callbackRef.current(
       [camera.position.x, camera.position.y, camera.position.z],
-      e.y
+      eulerRef.current.y
     );
   });
 

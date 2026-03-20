@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, Detailed } from '@react-three/drei';
 import * as THREE from 'three';
 import { BuildingParams, BuildingStyle } from '@/types';
 
@@ -132,9 +132,9 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 
   return (
     <group>
-      {/* Main glass cylinder */}
+      {/* Main glass cylinder - reduced segments: 32 → 8 */}
       <mesh position={[0, height * 0.5, 0]}>
-        <cylinderGeometry args={[width * 0.45, width * 0.5, height, 32]} />
+        <cylinderGeometry args={[width * 0.45, width * 0.5, height, 8]} />
         <meshPhysicalMaterial
           color={primaryColor}
           roughness={0.05}
@@ -147,9 +147,9 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
         />
       </mesh>
 
-      {/* Inner core */}
+      {/* Inner core - reduced segments: 16 → 8 */}
       <mesh position={[0, height * 0.5, 0]}>
-        <cylinderGeometry args={[width * 0.2, width * 0.22, height * 0.95, 16]} />
+        <cylinderGeometry args={[width * 0.2, width * 0.22, height * 0.95, 8]} />
         <meshPhysicalMaterial
           color={secondaryColor}
           roughness={0.2}
@@ -159,14 +159,14 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
         />
       </mesh>
 
-      {/* Floating LED rings */}
+      {/* Floating LED rings - reduced torus segments */}
       {Array.from({ length: rings }, (_, i) => {
         const y = 1.5 + i * (height / rings);
         const pulse = seededRandom(seed + i * 37) > 0.5;
         return (
           <group key={`ring-${i}`} position={[0, y, 0]} rotation={[0, i * twist * 10, 0]}>
             <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <torusGeometry args={[width * 0.55, 0.04, 8, 32]} />
+              <torusGeometry args={[width * 0.55, 0.04, 4, 12]} />
               <meshStandardMaterial
                 color={pulse ? accentColor : primaryColor}
                 emissive={pulse ? accentColor : primaryColor}
@@ -177,7 +177,7 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
         );
       })}
 
-      {/* Holographic top */}
+      {/* Holographic top - NO pointLight beacon */}
       <group position={[0, height, 0]}>
         <mesh position={[0, 0.8, 0]}>
           <octahedronGeometry args={[width * 0.35, 0]} />
@@ -186,13 +186,11 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
             roughness={0.0}
             metalness={1.0}
             emissive={accentColor}
-            emissiveIntensity={1.0}
+            emissiveIntensity={2.0}
             transparent
             opacity={0.8}
           />
         </mesh>
-        {/* Beacon light */}
-        <pointLight position={[0, 1.5, 0]} intensity={2} color={accentColor} distance={15} />
       </group>
 
       {/* Vertical LED strips */}
@@ -342,12 +340,11 @@ function IndustrialFortress({ height, width, depth, primaryColor, secondaryColor
         );
       })}
 
-      {/* Warning light on top */}
+      {/* Warning light on top - emissive sphere only, NO pointLight */}
       <mesh position={[0, height + 1.2, 0]}>
         <sphereGeometry args={[0.1, 8, 8]} />
-        <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={2} />
+        <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={3} />
       </mesh>
-      <pointLight position={[0, height + 1.2, 0]} intensity={0.5} color="#ff3333" distance={8} />
     </group>
   );
 }
@@ -537,9 +534,9 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
         })}
       </group>
 
-      {/* Big grid windows */}
-      {Array.from({ length: Math.floor(height / 0.9) }, (_, i) => {
-        const y = 0.5 + i * 0.9;
+      {/* Big grid windows - reduced density: height/0.9 → height/1.8 */}
+      {Array.from({ length: Math.floor(height / 1.8) }, (_, i) => {
+        const y = 0.5 + i * 1.8;
         if (y > height - 0.5) return null;
         const cols = Math.max(2, Math.floor(width / 0.5));
         return (
@@ -657,9 +654,9 @@ function BrownstoneBuild({ height, width, depth, primaryColor, secondaryColor, a
         );
       })}
 
-      {/* Warm windows with shutters */}
-      {Array.from({ length: Math.floor(height / 1.3) }, (_, i) => {
-        const y = 0.8 + i * 1.3;
+      {/* Warm windows with shutters - reduced density: height/1.3 → height/2.6 */}
+      {Array.from({ length: Math.floor(height / 2.6) }, (_, i) => {
+        const y = 0.8 + i * 2.6;
         if (y > height - 0.5) return null;
         return (
           <group key={`win-${i}`}>
@@ -749,9 +746,9 @@ function GothicCathedral({ height, width, depth, primaryColor, secondaryColor, a
         </group>
       ))}
 
-      {/* Rose window (front) */}
+      {/* Rose window (front) - reduced segments: 16 → 8 */}
       <mesh position={[0, height * 0.6, depth * 0.61]}>
-        <circleGeometry args={[Math.min(width, depth) * 0.3, 16]} />
+        <circleGeometry args={[Math.min(width, depth) * 0.3, 8]} />
         <meshStandardMaterial
           color={accentColor}
           emissive={accentColor}
@@ -760,9 +757,9 @@ function GothicCathedral({ height, width, depth, primaryColor, secondaryColor, a
           side={THREE.DoubleSide}
         />
       </mesh>
-      {/* Rose window ring */}
+      {/* Rose window ring - reduced segments: 16 → 8 */}
       <mesh position={[0, height * 0.6, depth * 0.615]} rotation={[0, 0, 0]}>
-        <ringGeometry args={[Math.min(width, depth) * 0.28, Math.min(width, depth) * 0.33, 16]} />
+        <ringGeometry args={[Math.min(width, depth) * 0.28, Math.min(width, depth) * 0.33, 8]} />
         <meshStandardMaterial color={secondaryColor} side={THREE.DoubleSide} />
       </mesh>
 
@@ -861,9 +858,9 @@ function ModernBuilding({ height, width, depth, primaryColor, secondaryColor, ac
         <meshPhysicalMaterial color={secondaryColor} roughness={0.1} metalness={0.7} emissive={accentColor} emissiveIntensity={0.15} />
       </mesh>
 
-      {/* Window grid */}
-      {Array.from({ length: Math.floor(height / 1.0) }, (_, i) => {
-        const y = 0.6 + i * 1.0;
+      {/* Window grid - reduced density: height/1.0 → height/2.0 */}
+      {Array.from({ length: Math.floor(height / 2.0) }, (_, i) => {
+        const y = 0.6 + i * 2.0;
         if (y > height - 1) return null;
         const cols = Math.max(2, Math.floor(width / 0.45));
         return (
@@ -905,12 +902,32 @@ export default function Building({ params, onClick }: BuildingProps) {
   const seed = position[0] * 73 + position[2] * 137;
   const opacityRef = useRef(1);
 
-  const effectivePrimary = isCurrentUser
-    ? '#' + new THREE.Color(primaryColor).lerp(new THREE.Color('#1DB954'), 0.25).getHexString()
-    : primaryColor;
-  const effectiveAccent = isCurrentUser
-    ? '#' + new THREE.Color(accentColor).lerp(new THREE.Color('#1DB954'), 0.3).getHexString()
-    : accentColor;
+  // Optimization 5: Memoize color computations
+  const effectivePrimary = useMemo(() =>
+    isCurrentUser
+      ? '#' + new THREE.Color(primaryColor).lerp(new THREE.Color('#1DB954'), 0.25).getHexString()
+      : primaryColor,
+    [isCurrentUser, primaryColor]
+  );
+  const effectiveAccent = useMemo(() =>
+    isCurrentUser
+      ? '#' + new THREE.Color(accentColor).lerp(new THREE.Color('#1DB954'), 0.3).getHexString()
+      : accentColor,
+    [isCurrentUser, accentColor]
+  );
+
+  // Optimization 1a: Reuse Vector3 for scale lerp instead of allocating per frame
+  const targetScaleVec = useRef(new THREE.Vector3(1, 1, 1));
+
+  // Optimization 1b: Cache mesh references to avoid .traverse() every frame
+  const meshesRef = useRef<THREE.Mesh[]>([]);
+  const meshesCached = useRef(false);
+
+  useEffect(() => {
+    // Reset cache when building changes so it re-collects on next frame
+    meshesCached.current = false;
+    meshesRef.current = [];
+  }, [style, height, width, depth, effectivePrimary, secondaryColor, effectiveAccent, seed, isCurrentUser]);
 
   useFrame((state) => {
     if (!groupRef.current) return;
@@ -918,23 +935,34 @@ export default function Building({ params, onClick }: BuildingProps) {
 
     const pulseScale = highlighted ? Math.sin(t * 3) * 0.03 : 0;
     const targetScale = hovered ? 1.04 : 1 + pulseScale;
-    groupRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.08);
+    targetScaleVec.current.set(targetScale, targetScale, targetScale);
+    groupRef.current.scale.lerp(targetScaleVec.current, 0.08);
 
     groupRef.current.position.y = Math.sin(t * 0.4 + position[0] * 0.3) * 0.06;
 
     const targetOpacity = dimmed ? 0.15 : 1;
     opacityRef.current += (targetOpacity - opacityRef.current) * 0.06;
 
-    groupRef.current.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.material) {
-        const mat = child.material as THREE.Material & { opacity: number };
-        if (mat.opacity !== undefined) {
-          if (!mat.userData.baseOpacity) mat.userData.baseOpacity = mat.opacity;
-          mat.transparent = true;
-          mat.opacity = Math.min(mat.userData.baseOpacity, opacityRef.current);
+    // Collect meshes once, then iterate the cached array
+    if (!meshesCached.current) {
+      meshesRef.current = [];
+      groupRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material) {
+          meshesRef.current.push(child);
         }
+      });
+      meshesCached.current = true;
+    }
+
+    const meshes = meshesRef.current;
+    for (let i = 0, len = meshes.length; i < len; i++) {
+      const mat = meshes[i].material as THREE.Material & { opacity: number };
+      if (mat.opacity !== undefined) {
+        if (!mat.userData.baseOpacity) mat.userData.baseOpacity = mat.opacity;
+        mat.transparent = true;
+        mat.opacity = Math.min(mat.userData.baseOpacity, opacityRef.current);
       }
-    });
+    }
   });
 
   const buildingComponent = useMemo(() => {
@@ -969,36 +997,47 @@ export default function Building({ params, onClick }: BuildingProps) {
       onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
       onClick={(e) => { e.stopPropagation(); onClick(params); }}
     >
-      {/* Ground glow */}
+      {/* Ground glow - reduced segments: 12 → 8 */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-        <circleGeometry args={[Math.max(width, depth) * 1.2, 24]} />
+        <circleGeometry args={[Math.max(width, depth) * 1.2, 8]} />
         <meshBasicMaterial color={effectivePrimary} transparent opacity={isCurrentUser ? 0.12 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
 
-      {/* The actual building */}
-      {buildingComponent}
-
-      {/* Landmark glow for current user */}
-      {isCurrentUser && (
+      {/* LOD: Full detail / Medium box / Low box */}
+      <Detailed distances={[0, 30, 60]}>
+        {/* LOD 0: Full detail */}
         <group>
-          <mesh position={[0, height + 0.5, 0]}>
-            <sphereGeometry args={[width * 1.0, 16, 16]} />
-            <meshBasicMaterial color="#1DB954" transparent opacity={0.04} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
-          </mesh>
-          <pointLight position={[0, height + 1, 0]} intensity={1} color="#1DB954" distance={12} />
+          {buildingComponent}
+
+          {/* Landmark glow for current user - NO pointLight */}
+          {isCurrentUser && (
+            <mesh position={[0, height + 0.5, 0]}>
+              <sphereGeometry args={[width * 1.0, 6, 6]} />
+              <meshBasicMaterial color="#1DB954" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
+            </mesh>
+          )}
+
+          {/* Glow halo for tall buildings - reduced segments: 16,16 → 6,6 */}
+          {height > 15 && !isCurrentUser && (
+            <mesh position={[0, height + 0.5, 0]}>
+              <sphereGeometry args={[width * 0.8, 6, 6]} />
+              <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
+            </mesh>
+          )}
         </group>
-      )}
 
-      {/* Glow halo for tall buildings */}
-      {height > 15 && !isCurrentUser && (
-        <mesh position={[0, height + 0.5, 0]}>
-          <sphereGeometry args={[width * 0.8, 16, 16]} />
-          <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
+        {/* LOD 1: Medium detail - simple colored box */}
+        <mesh position={[0, height * 0.5, 0]}>
+          <boxGeometry args={[width, height, depth]} />
+          <meshStandardMaterial color={effectivePrimary} emissive={effectivePrimary} emissiveIntensity={0.15} />
         </mesh>
-      )}
 
-      {/* Accent light */}
-      <pointLight position={[0, 0.3, 0]} intensity={hovered ? 1.2 : 0.5} color={effectivePrimary} distance={6} />
+        {/* LOD 2: Low detail - flat basic box */}
+        <mesh position={[0, height * 0.5, 0]}>
+          <boxGeometry args={[width, height, depth]} />
+          <meshBasicMaterial color={effectivePrimary} />
+        </mesh>
+      </Detailed>
 
       {/* Hover wireframe outline */}
       {hovered && (
