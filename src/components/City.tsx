@@ -18,6 +18,7 @@ interface CityProps {
   onBuildingClick: (params: BuildingParams) => void;
   onIntroComplete?: () => void;
   focusPosition?: [number, number, number] | null;
+  hideControls?: boolean;
 }
 
 /* ── Time-of-day color presets ── */
@@ -903,7 +904,7 @@ function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number],
 }
 
 /* ── Main City export ── */
-export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition }: CityProps) {
+export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
@@ -941,7 +942,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Controls UI */}
-      <div style={{
+      {!hideControls && <div style={{
         position: 'absolute',
         top: 60,
         right: 16,
@@ -1009,7 +1010,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             {icon}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* WASD hint when in explore mode */}
       {isExplore && introComplete && (

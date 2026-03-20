@@ -67,52 +67,102 @@ function SkylineLoader({ stats }: { stats: string | null }) {
   );
 }
 
+/* ── Feature cards data ── */
+const FEATURES = [
+  { emoji: '\u{1F3D9}\uFE0F', title: 'Unique Buildings', desc: 'Each artist becomes a distinct building styled by their genre' },
+  { emoji: '\u{1F305}', title: 'Dynamic Scenes', desc: 'Experience your city in night, dawn, day, and sunset' },
+  { emoji: '\u{1F6B6}', title: 'Explore Mode', desc: 'Walk through your city with free camera controls' },
+];
+
 /* ── Landing hero: title + sign in + demo city behind ── */
 function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
   return (
-    <div
-      className="fixed inset-0 z-40 flex flex-col items-center justify-center"
-      style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.65) 0%, rgba(8,9,10,0.92) 70%)' }}
-    >
-      <div className="flex flex-col items-center gap-6 px-6 text-center">
-        <h1
-          className="font-pixel text-5xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
-          style={{
-            textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
-          }}
-        >
-          SPOTIFY CITY
-        </h1>
+    <div className="fixed inset-0 z-40 overflow-y-auto">
+      {/* Dark vignette overlay - more transparent to show city */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.45) 0%, rgba(8,9,10,0.85) 60%, rgba(8,9,10,0.95) 100%)' }}
+      />
 
-        <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md font-light">
-          Your music. Your city.
-        </p>
+      {/* Hero section */}
+      <div className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
+        <div className="flex flex-col items-center gap-5">
+          <h1
+            className="font-pixel text-5xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
+            style={{
+              textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
+            }}
+          >
+            SPOTIFY CITY
+          </h1>
 
-        <button
-          onClick={() => signIn('spotify')}
-          className="mt-6 flex items-center gap-3 px-10 py-4 rounded-full text-base sm:text-lg font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
-          style={{
-            background: '#1DB954',
-            color: '#000',
-            boxShadow: '0 0 20px rgba(29,185,84,0.3)',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+          <p className="text-gray-400 text-sm sm:text-lg tracking-wide max-w-md font-light">
+            Your music. Your city.
+          </p>
+
+          <p className="text-gray-600 text-xs sm:text-sm tracking-wide max-w-sm font-light">
+            Your listening history, visualized as a 3D city skyline
+          </p>
+
+          <button
+            onClick={() => signIn('spotify')}
+            className="mt-4 flex items-center gap-3 px-8 py-3 rounded-full text-sm sm:text-base font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
+            style={{
+              background: '#1DB954',
+              color: '#000',
+              boxShadow: '0 0 20px rgba(29,185,84,0.3)',
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+            </svg>
+            Sign in with Spotify
+          </button>
+
+          <button
+            onClick={onExploreDemo}
+            className="mt-1 flex items-center gap-2 px-8 py-3 rounded-full text-sm font-medium tracking-wide transition-all duration-200 hover:scale-105 hover:border-[#1DB954]/60 hover:text-gray-200 active:scale-95"
+            style={{
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.5)',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          >
+            Explore Demo City
+          </button>
+
+          <p className="mt-8 text-gray-600 text-[11px] tracking-wider">
+            built by <span className="text-gray-500">@codanium_</span>
+          </p>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
           </svg>
-          Sign in with Spotify
-        </button>
+        </div>
+      </div>
 
-        <button
-          onClick={onExploreDemo}
-          className="mt-2 text-gray-500 text-xs tracking-wider hover:text-gray-300 transition-colors underline underline-offset-4 decoration-gray-700"
-        >
-          explore demo
-        </button>
-
-        <p className="mt-12 text-gray-600 text-[11px] tracking-wider">
-          built by <span className="text-gray-500">@codanium_</span>
-        </p>
+      {/* Feature cards below the fold */}
+      <div className="relative px-6 pb-20 -mt-8">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {FEATURES.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-2xl p-6 text-center transition-all duration-300 hover:scale-[1.03]"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              <div className="text-2xl mb-3">{f.emoji}</div>
+              <h3 className="text-white/80 text-sm font-semibold tracking-wide mb-1.5">{f.title}</h3>
+              <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -238,6 +288,7 @@ export default function Home() {
           buildings={allBuildings}
           onBuildingClick={handleBuildingClick}
           focusPosition={focusPosition}
+          hideControls={heroVisible || loading}
         />
       </main>
 
