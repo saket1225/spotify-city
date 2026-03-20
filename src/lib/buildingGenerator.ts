@@ -188,5 +188,37 @@ export function generateBuildingParams(
 }
 
 export function generateDemoBuildings(profiles: SpotifyProfile[]): BuildingParams[] {
-  return profiles.map((p, i) => generateBuildingParams(p, i));
+  const placed: { x: number; z: number; radius: number }[] = [];
+
+  return profiles.map((p, i) => {
+    const params = generateBuildingParams(p, i);
+    const minDist = Math.max(params.width, params.depth) * 1.5 + 1;
+
+    let x = params.position[0];
+    let z = params.position[2];
+    let attempts = 0;
+
+    while (attempts < 50) {
+      let overlapping = false;
+      for (const pl of placed) {
+        const dx = x - pl.x;
+        const dz = z - pl.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist < minDist + pl.radius) {
+          overlapping = true;
+          break;
+        }
+      }
+      if (!overlapping) break;
+      const district = getDistrict(params.profile.topGenres);
+      const angle = Math.atan2(z - district.center[1], x - district.center[0]);
+      x += Math.cos(angle) * 2;
+      z += Math.sin(angle) * 2;
+      attempts++;
+    }
+
+    params.position = [x, 0, z];
+    placed.push({ x, z, radius: minDist / 2 });
+    return params;
+  });
 }
