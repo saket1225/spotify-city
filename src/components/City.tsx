@@ -11,6 +11,7 @@ import Minimap from './Minimap';
 import VirtualJoystick from './VirtualJoystick';
 import { BuildingParams } from '@/types';
 import { useAmbientSound, SpeakerButton } from './AmbientSound';
+import KeyboardShortcuts from './KeyboardShortcuts';
 
 function detectWebGL(): boolean {
   try {
@@ -976,6 +977,7 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { muted: soundMuted, toggle: toggleSound } = useAmbientSound(time);
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
   const [flyTarget, setFlyTarget] = useState<[number, number, number] | null>(null);
@@ -1005,6 +1007,19 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
       setFlyTarget([building.position[0], building.height, building.position[2]]);
     }
   }, [cameraMode]);
+
+  // '?' key opens shortcuts overlay
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === '?') {
+        e.preventDefault();
+        setShortcutsOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const preset = TIME_PRESETS[time];
   const isExplore = cameraMode === 'explore';
@@ -1095,7 +1110,30 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
 
         {/* Sound toggle */}
         <SpeakerButton muted={soundMuted} onToggle={toggleSound} />
+
+        {/* Divider */}
+        <div className="h-px mx-1 bg-white/10 hidden sm:block" />
+
+        {/* Keyboard shortcuts button - desktop only */}
+        <button
+          onClick={() => setShortcutsOpen(true)}
+          title="Keyboard Shortcuts (?)"
+          className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] items-center justify-center transition-all duration-200 cursor-pointer hidden sm:flex"
+          style={{
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(8,9,10,0.7)',
+            backdropFilter: 'blur(10px)',
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 14,
+            fontWeight: 700,
+            fontFamily: 'system-ui',
+          }}
+        >
+          ?
+        </button>
       </div>}
+
+      <KeyboardShortcuts open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       {/* Control hints when in explore mode */}
       {isExplore && introComplete && !isTouchDevice && (

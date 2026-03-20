@@ -55,10 +55,14 @@
 **Decision:** Procedural Web Audio API soundscapes per time of day - night hum + crickets, dawn wind + birds, day bustle + shimmer, sunset warm drone + pad chord. Smooth 2.5s crossfades, starts muted, speaker toggle, localStorage persistence.
 **Result:** Shipped and deployed. Subtle ambient audio (0.07 volume) that changes with time of day. Zero audio files - all procedural.
 
+## Decision #12 - Typography Polish (Mar 20, 2026)
+**Problem:** Pixel font used everywhere - loading text, UI labels, body copy. Looked retro but hurt readability and felt inconsistent.
+**Decision:** Pixel font (Silkscreen) reserved ONLY for "SPOTIFY CITY" branding. Everything else uses Inter. Added font smoothing, global letter-spacing, proper line-height. ShareCard unified to Inter + Silkscreen logo.
+**Result:** Shipped. Clean premium type hierarchy - pixel font = brand identity, Inter = everything else.
+
 ---
 
 ## Backlog (prioritized)
-1. Typography polish - evaluate pixel font vs clean sans-serif
 3. Leaderboard view - compare cities with friends
 4. More building variety - more genre-specific architecture
 5. Keyboard shortcuts overlay (? key)
