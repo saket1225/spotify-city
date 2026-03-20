@@ -101,7 +101,7 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
       {/* Panel */}
       <div
         ref={panelRef}
-        className="relative w-full sm:w-[400px] max-h-[90vh] sm:max-h-full overflow-y-auto sm:rounded-l-2xl rounded-t-2xl sm:rounded-t-none"
+        className="relative w-full sm:w-[400px] max-h-[70vh] sm:max-h-full overflow-y-auto rounded-t-2xl sm:rounded-t-none sm:rounded-l-2xl"
         style={{
           background: 'rgba(10, 10, 18, 0.88)',
           backdropFilter: 'blur(24px)',
@@ -111,12 +111,19 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
           boxShadow: `inset 0 0 80px ${accent}06, -8px 0 40px rgba(0,0,0,0.5), 0 0 60px ${accent}08`,
           transform: visible
             ? 'translateX(0) translateY(0)'
-            : 'translateX(100%) translateY(0)',
+            : typeof window !== 'undefined' && window.innerWidth < 768
+              ? 'translateX(0) translateY(100%)'
+              : 'translateX(100%) translateY(0)',
           opacity: visible ? 1 : 0,
           transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
         {/* Accent glow line at top */}
         <div
           className="h-[2px] w-full"

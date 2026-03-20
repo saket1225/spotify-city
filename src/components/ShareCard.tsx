@@ -417,12 +417,12 @@ export default function ShareCard({ profile, onClose }: ShareCardProps) {
         {/* Card preview - scaled to fit viewport */}
         <div className="rounded-2xl overflow-hidden" style={{
           maxWidth: '92vw',
-          maxHeight: '68vh',
+          maxHeight: '60vh',
           overflow: 'hidden',
           boxShadow: '0 0 60px rgba(29,185,84,0.15), 0 0 120px rgba(29,185,84,0.05)',
         }}>
-          <div style={{
-            transform: 'scale(0.5)',
+          <div className="origin-top-center" style={{
+            transform: typeof window !== 'undefined' && window.innerWidth < 640 ? 'scale(0.38)' : 'scale(0.5)',
             transformOrigin: 'top center',
             width: 540,
             height: 960,

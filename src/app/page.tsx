@@ -61,8 +61,8 @@ function SkylineLoader({ stats }: { stats: string | null }) {
       }}
     >
       <div className="flex flex-col items-center gap-8">
-        <div className="relative w-[380px] h-[120px] overflow-hidden">
-          <svg width="380" height="120" viewBox="0 0 390 120">
+        <div className="relative w-[280px] sm:w-[380px] h-[100px] sm:h-[120px] overflow-hidden">
+          <svg width="100%" height="100%" viewBox="0 0 390 120" preserveAspectRatio="xMidYMid meet">
             {buildings.map((b, i) => {
               const delay = i / buildings.length;
               const localProgress = Math.max(0, Math.min(1, (progress - delay * 0.5) / 0.5));
@@ -122,7 +122,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
       <div className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center">
         <div className="flex flex-col items-center gap-5">
           <h1
-            className="font-pixel text-5xl sm:text-7xl md:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
+            className="font-pixel text-3xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-[0.2em] text-[#1DB954]"
             style={{
               textShadow: '0 0 60px rgba(29,185,84,0.5), 0 0 120px rgba(29,185,84,0.25), 0 0 4px rgba(29,185,84,0.8)',
             }}
@@ -140,7 +140,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
 
           <button
             onClick={() => signIn('spotify')}
-            className="mt-4 flex items-center gap-3 px-8 py-3 rounded-full text-sm sm:text-base font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
+            className="mt-4 flex items-center justify-center gap-3 w-full max-w-xs px-8 py-3 rounded-full text-sm sm:text-base font-semibold tracking-wide transition-all duration-200 hover:scale-105 hover:shadow-[0_0_40px_rgba(29,185,84,0.4)] active:scale-95"
             style={{
               background: '#1DB954',
               color: '#000',
@@ -155,7 +155,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
 
           <button
             onClick={onExploreDemo}
-            className="mt-1 flex items-center gap-2 px-8 py-3 rounded-full text-sm font-medium tracking-wide transition-all duration-200 hover:scale-105 hover:border-[#1DB954]/60 hover:text-gray-200 active:scale-95"
+            className="mt-1 flex items-center justify-center gap-2 w-full max-w-xs px-8 py-3 rounded-full text-sm font-medium tracking-wide transition-all duration-200 hover:scale-105 hover:border-[#1DB954]/60 hover:text-gray-200 active:scale-95"
             style={{
               background: 'transparent',
               color: 'rgba(255,255,255,0.5)',
@@ -181,12 +181,12 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
       </div>
 
       {/* Feature cards below the fold */}
-      <div className="relative px-6 pb-20 -mt-8">
-        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="relative px-4 sm:px-6 pb-16 sm:pb-20 -mt-8">
+        <div className="max-w-3xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl p-8 text-center transition-all duration-300 hover:scale-[1.03] hover:border-[#1DB954]/20"
+              className="rounded-2xl p-5 sm:p-8 text-center transition-all duration-300 hover:scale-[1.03] hover:border-[#1DB954]/20"
               style={{
                 background: 'rgba(255,255,255,0.06)',
                 backdropFilter: 'blur(16px)',

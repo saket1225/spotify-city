@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import Building from './Building';
 import ExploreCamera from './CityCamera';
 import Minimap from './Minimap';
+import VirtualJoystick from './VirtualJoystick';
 import { BuildingParams } from '@/types';
 
 function detectWebGL(): boolean {
@@ -948,6 +949,17 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
   const preset = TIME_PRESETS[time];
   const isExplore = cameraMode === 'explore';
 
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const joystickMoveRef = useRef({ x: 0, y: 0 });
+
+  const handleJoystickMove = useCallback((dx: number, dy: number) => {
+    joystickMoveRef.current = { x: dx, y: dy };
+  }, []);
+
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
   const [webglSupported, setWebglSupported] = useState(true);
   useEffect(() => { setWebglSupported(detectWebGL()); }, []);
 
@@ -970,35 +982,17 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Controls UI */}
-      {!hideControls && <div style={{
-        position: 'absolute',
-        top: 60,
-        right: 16,
-        zIndex: 20,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 6,
-      }}>
+      {!hideControls && <div className="absolute top-[60px] right-3 sm:right-4 z-20 flex flex-col gap-1.5 sm:gap-1.5">
         {/* Camera mode toggle */}
         <button
           onClick={() => setCameraMode(m => m === 'orbit' ? 'explore' : 'orbit')}
           title={isExplore ? 'Switch to Orbit' : 'Switch to Explore (WASD)'}
+          className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 10,
             border: isExplore ? '2px solid rgba(29,185,84,0.8)' : '1px solid rgba(255,255,255,0.1)',
             background: isExplore ? 'rgba(29,185,84,0.15)' : 'rgba(8,9,10,0.7)',
             backdropFilter: 'blur(10px)',
-            cursor: 'pointer',
-            fontSize: 14,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
             color: isExplore ? '#1DB954' : 'rgba(255,255,255,0.5)',
-            fontWeight: 700,
-            fontFamily: 'system-ui',
             boxShadow: isExplore ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
           }}
         >
@@ -1010,7 +1004,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         </button>
 
         {/* Divider */}
-        <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 4px' }} />
+        <div className="h-px mx-1 bg-white/10" />
 
         {/* Time-of-day toggle */}
         {([
@@ -1023,18 +1017,11 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             key={key}
             onClick={() => setTime(key)}
             title={label}
+            className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
             style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
               border: time === key ? '2px solid rgba(29,185,84,0.8)' : '1px solid rgba(255,255,255,0.1)',
               background: time === key ? 'rgba(29,185,84,0.15)' : 'rgba(8,9,10,0.7)',
               backdropFilter: 'blur(10px)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s',
               color: time === key ? '#1DB954' : 'rgba(255,255,255,0.5)',
               boxShadow: time === key ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
             }}
@@ -1044,8 +1031,8 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         ))}
       </div>}
 
-      {/* WASD hint when in explore mode */}
-      {isExplore && introComplete && (
+      {/* Control hints when in explore mode */}
+      {isExplore && introComplete && !isTouchDevice && (
         <div style={{
           position: 'absolute',
           bottom: 16,
@@ -1066,14 +1053,43 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         </div>
       )}
 
-      {/* Minimap (explore mode only) */}
+      {/* Touch hint (mobile only, explore mode) */}
+      {isExplore && introComplete && isTouchDevice && (
+        <div style={{
+          position: 'absolute',
+          bottom: 16,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 20,
+          background: 'rgba(8,9,10,0.7)',
+          backdropFilter: 'blur(10px)',
+          borderRadius: 10,
+          padding: '6px 14px',
+          border: '1px solid rgba(255,255,255,0.1)',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: 11,
+          fontFamily: 'system-ui',
+          whiteSpace: 'nowrap',
+        }}>
+          Joystick move · Drag look · Pinch zoom · Tap building · Double-tap fly
+        </div>
+      )}
+
+      {/* Virtual joystick (touch devices, explore mode) */}
+      {isExplore && introComplete && isTouchDevice && (
+        <VirtualJoystick onMove={handleJoystickMove} />
+      )}
+
+      {/* Minimap (explore mode only, hidden on very small screens) */}
       {isExplore && introComplete && (
-        <Minimap
-          buildings={buildings}
-          cameraPosition={camPos}
-          cameraRotation={camRotY}
-          onBuildingClick={handleMinimapClick}
-        />
+        <div className="hidden sm:block">
+          <Minimap
+            buildings={buildings}
+            cameraPosition={camPos}
+            cameraRotation={camRotY}
+            onBuildingClick={handleMinimapClick}
+          />
+        </div>
       )}
 
       <Canvas
@@ -1118,6 +1134,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             enabled={true}
             flyTarget={flyTarget}
             onFlyComplete={() => setFlyTarget(null)}
+            joystickInput={joystickMoveRef}
           />
         )}
 

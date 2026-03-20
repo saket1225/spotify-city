@@ -15,14 +15,31 @@
 **Decision:** 7 distinct architectural styles per genre, 4 time-of-day modes, WASD explore camera with minimap.
 **Result:** Shipped. Each genre has a unique building type. Day/night/dawn/sunset transitions. Free exploration mode.
 
+## Decision #4 - Landing Page Polish Round 2 (Mar 20, 2026)
+**Problem:** Feature cards nearly invisible (0.03 opacity bg), city still hidden behind dark overlay, attribution awkwardly centered, loading was boring.
+**Decision:** Bump card contrast, lighten hero overlay, move attribution to corner, add storytelling loader phases.
+**Result:** Shipped. Cards visible with borders, city more atmospheric through lighter overlay, loading now tells a story ("Scanning your library..." → "Building your skyline..." → "Welcome to your city").
+
+## Decision #5 - Premium Artist Detail Panel (Mar 20, 2026)
+**Problem:** Clicking a building showed a basic profile card. No real engagement or delight.
+**Decision:** Build a premium glass slide-in panel with artist info, genre pills, stats grid, skyline rank bar chart, color palette, and top tracks.
+**Result:** Shipped. Panel slides from right with accent-colored glow border, smooth transitions between buildings, close on X/escape/click-outside.
+
+## Decision #6 - WebGL Fallback + Loading State + SVG Icons (Mar 20, 2026)
+**Problem:** Headless browsers (and some old browsers) show black screen with no feedback. Mode toggle used raw emoji. No loading indicator between hero and city.
+**Decision:** WebGL detection fallback, "Loading city..." pulse animation, SVG icons for all toggle buttons.
+**Result:** Shipped. Clean degradation for unsupported browsers, smooth transition from hero to city, professional toggle icons.
+
+## Decision #7 - Viral Share Card Redesign (Mar 20, 2026)
+**Problem:** Old share card was basic. Not screenshot-worthy or shareable.
+**Decision:** Full redesign - dark glass card with genre gradients, stats grid, top 3 artists, genre pills, CSS city skyline, QR code, download/copy/share buttons.
+**Result:** Shipped. Card is portrait-optimized (540x960), download as PNG via html2canvas, Web Share API support.
+
 ---
 
 ## Backlog (prioritized)
-1. Typography - the pixel font is polarizing. Consider testing a clean sans-serif alternative
-2. The "explore demo" flow - does it actually work well? Need to test
-3. Mobile experience - need to verify responsiveness
-4. Share card redesign - make the share output viral-worthy
-5. Loading experience - the building animation could be more dramatic
-6. Sound design - ambient city sounds per time of day
-7. Building interactions - clicking a building should show artist details beautifully
-8. Social proof - add user count or testimonials
+1. Mobile experience - need to verify responsiveness
+2. Sound design - ambient city sounds per time of day
+3. Social proof - live activity ticker (inspired by GitCity)
+4. Confetti/celebration on city reveal
+5. Typography polish - evaluate pixel font vs clean sans-serif
