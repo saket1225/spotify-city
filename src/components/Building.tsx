@@ -129,6 +129,21 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 }) {
   const twist = seededRange(seed, 0.02, 0.06);
   const rings = Math.floor(height / 2.5);
+  const ringsRef = useRef<THREE.Group>(null);
+  const holoRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (ringsRef.current) {
+      ringsRef.current.children.forEach((ring, i) => {
+        ring.rotation.y += (0.002 + i * 0.001);
+      });
+    }
+    if (holoRef.current) {
+      (holoRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 1.5 + Math.sin(t * 1.5 + seed) * 1.0;
+      holoRef.current.rotation.y = t * 0.3;
+    }
+  });
 
   return (
     <group>
@@ -160,6 +175,7 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
       </mesh>
 
       {/* Floating LED rings - reduced torus segments */}
+      <group ref={ringsRef}>
       {Array.from({ length: rings }, (_, i) => {
         const y = 1.5 + i * (height / rings);
         const pulse = seededRandom(seed + i * 37) > 0.5;
@@ -176,10 +192,11 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
           </group>
         );
       })}
+      </group>
 
       {/* Holographic top - NO pointLight beacon */}
       <group position={[0, height, 0]}>
-        <mesh position={[0, 0.8, 0]}>
+        <mesh ref={holoRef} position={[0, 0.8, 0]}>
           <octahedronGeometry args={[width * 0.35, 0]} />
           <meshPhysicalMaterial
             color={accentColor}
@@ -237,6 +254,14 @@ function FuturisticTower({ height, width, depth, primaryColor, secondaryColor, a
 function IndustrialFortress({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
+  const warningLightRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    if (!warningLightRef.current) return;
+    const t = state.clock.elapsedTime;
+    (warningLightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5 + Math.sin(t * 4 + seed) * 1.5;
+  });
+
   return (
     <group>
       {/* Main massive block */}
@@ -341,7 +366,7 @@ function IndustrialFortress({ height, width, depth, primaryColor, secondaryColor
       })}
 
       {/* Warning light on top - emissive sphere only, NO pointLight */}
-      <mesh position={[0, height + 1.2, 0]}>
+      <mesh ref={warningLightRef} position={[0, height + 1.2, 0]}>
         <sphereGeometry args={[0.1, 8, 8]} />
         <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={3} />
       </mesh>
@@ -466,6 +491,22 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
   height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
 }) {
   const segments = Math.max(4, Math.floor(height / 2));
+  const antennaLightRef = useRef<THREE.Mesh>(null);
+  const gardenRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (antennaLightRef.current) {
+      (antennaLightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.0 + Math.sin(t * 2 + seed) * 1.0;
+    }
+    if (gardenRef.current) {
+      gardenRef.current.children.forEach((child, i) => {
+        if (i === 0) return; // skip roof pad
+        child.rotation.z = Math.sin(t * 1.2 + i * 2 + seed) * 0.04;
+        child.rotation.x = Math.sin(t * 0.8 + i * 3 + seed) * 0.03;
+      });
+    }
+  });
 
   return (
     <group>
@@ -509,7 +550,7 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
       </mesh>
 
       {/* Rooftop garden */}
-      <group position={[0, height + 0.05, 0]}>
+      <group ref={gardenRef} position={[0, height + 0.05, 0]}>
         {/* Green roof pad */}
         <mesh position={[0, 0, 0]}>
           <boxGeometry args={[width * 0.9, 0.1, depth * 0.9]} />
@@ -577,7 +618,7 @@ function PopTower({ height, width, depth, primaryColor, secondaryColor, accentCo
         <cylinderGeometry args={[0.03, 0.05, 2, 6]} />
         <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
       </mesh>
-      <mesh position={[0, height + 2.1, 0]}>
+      <mesh ref={antennaLightRef} position={[0, height + 2.1, 0]}>
         <sphereGeometry args={[0.06, 6, 6]} />
         <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
       </mesh>
@@ -961,6 +1002,23 @@ export default function Building({ params, onClick }: BuildingProps) {
         if (!mat.userData.baseOpacity) mat.userData.baseOpacity = mat.opacity;
         mat.transparent = true;
         mat.opacity = Math.min(mat.userData.baseOpacity, opacityRef.current);
+      }
+    }
+
+    // Window flicker - ambient idle animation
+    if (!dimmed) {
+      for (let i = 0, len = meshes.length; i < len; i++) {
+        const mat = meshes[i].material as any;
+        if (mat.emissiveIntensity !== undefined) {
+          if (mat.userData.baseEmissive === undefined) {
+            mat.userData.baseEmissive = mat.emissiveIntensity;
+          }
+          const flickerSeed = seededRandom(seed + i * 31);
+          if (flickerSeed < 0.15 && mat.userData.baseEmissive > 0.2 && mat.userData.baseEmissive < 2.5) {
+            const flicker = Math.sin(t * (2 + flickerSeed * 4) + i * 7) * 0.2;
+            mat.emissiveIntensity = mat.userData.baseEmissive * (1 + flicker);
+          }
+        }
       }
     }
   });
