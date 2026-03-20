@@ -807,6 +807,101 @@ function Clouds({ time }: { time: TimeOfDay }) {
   );
 }
 
+/* ── Weather / Mood Particles per time of day ── */
+const WEATHER_CONFIG: Record<TimeOfDay, {
+  color: [number, number, number];
+  size: number;
+  opacity: number;
+  speed: number;        // vertical drift speed
+  wanderX: number;      // horizontal wander amplitude
+  wanderZ: number;
+  fadeHeight: number;    // y at which particles reset
+  yBase: number;         // spawn y range base
+  yRange: number;        // spawn y range
+}> = {
+  night:  { color: [1.0, 0.85, 0.4],  size: 0.15, opacity: 0.6, speed: 0.008, wanderX: 0.015, wanderZ: 0.015, fadeHeight: 30, yBase: 1, yRange: 20 },
+  dawn:   { color: [1.0, 1.0, 1.0],   size: 0.35, opacity: 0.25, speed: 0.012, wanderX: 0.005, wanderZ: 0.005, fadeHeight: 25, yBase: 0, yRange: 12 },
+  day:    { color: [1.0, 1.0, 0.9],   size: 0.08, opacity: 0.4, speed: 0.003, wanderX: 0.008, wanderZ: 0.008, fadeHeight: 30, yBase: 2, yRange: 25 },
+  sunset: { color: [1.0, 0.6, 0.2],   size: 0.18, opacity: 0.45, speed: 0.006, wanderX: 0.01, wanderZ: 0.01, fadeHeight: 28, yBase: 1, yRange: 18 },
+};
+
+function WeatherParticles({ time }: { time: TimeOfDay }) {
+  const count = 70;
+  const ref = useRef<THREE.Points>(null);
+  const matRef = useRef<THREE.PointsMaterial>(null);
+  const targetColor = useRef(new THREE.Color());
+  const currentConfig = useRef(WEATHER_CONFIG[time]);
+
+  const [positions, phases] = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    const ph = new Float32Array(count);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 70;
+      pos[i * 3 + 1] = Math.random() * 25;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 70;
+      ph[i] = Math.random() * Math.PI * 2;
+    }
+    return [pos, ph];
+  }, []);
+
+  useFrame((state) => {
+    if (!ref.current || !matRef.current) return;
+    const cfg = WEATHER_CONFIG[time];
+    const cur = currentConfig.current;
+    const lerpSpeed = 0.02;
+
+    // Smoothly interpolate config values
+    cur.speed += (cfg.speed - cur.speed) * lerpSpeed;
+    cur.wanderX += (cfg.wanderX - cur.wanderX) * lerpSpeed;
+    cur.wanderZ += (cfg.wanderZ - cur.wanderZ) * lerpSpeed;
+    cur.fadeHeight += (cfg.fadeHeight - cur.fadeHeight) * lerpSpeed;
+    cur.yBase += (cfg.yBase - cur.yBase) * lerpSpeed;
+    cur.yRange += (cfg.yRange - cur.yRange) * lerpSpeed;
+
+    // Lerp material properties
+    targetColor.current.setRGB(...cfg.color);
+    matRef.current.color.lerp(targetColor.current, 0.03);
+    matRef.current.size += (cfg.size - matRef.current.size) * 0.03;
+    matRef.current.opacity += (cfg.opacity - matRef.current.opacity) * 0.03;
+
+    const t = state.clock.elapsedTime;
+    const posAttr = ref.current.geometry.attributes.position;
+    const arr = posAttr.array as Float32Array;
+
+    for (let i = 0; i < count; i++) {
+      const phase = phases[i];
+      arr[i * 3] += Math.sin(t * 0.3 + phase) * cur.wanderX;
+      arr[i * 3 + 1] += cur.speed;
+      arr[i * 3 + 2] += Math.cos(t * 0.25 + phase * 1.3) * cur.wanderZ;
+
+      if (arr[i * 3 + 1] > cur.fadeHeight) {
+        arr[i * 3] = (Math.random() - 0.5) * 70;
+        arr[i * 3 + 1] = cur.yBase;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 70;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} count={count} />
+      </bufferGeometry>
+      <pointsMaterial
+        ref={matRef}
+        color={new THREE.Color(...WEATHER_CONFIG.night.color)}
+        size={WEATHER_CONFIG.night.size}
+        transparent
+        opacity={WEATHER_CONFIG.night.opacity}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
 function CinematicIntro({ onComplete }: { onComplete: () => void }) {
   const { camera } = useThree();
   const completedRef = useRef(false);
@@ -1219,6 +1314,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         <AnimatedGrid buildings={buildings} time={time} />
         <FloatingParticles time={time} />
         <DustParticles />
+        <WeatherParticles time={time} />
         <StreetFurniture buildings={buildings} />
 
         {buildings.map((b, i) => (

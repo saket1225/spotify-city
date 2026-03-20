@@ -80,11 +80,15 @@
 **Decision:** 3 sequential dark glass pill tips after hero dismissal (click buildings, WASD/touch explore, ? for shortcuts). Auto-advance every 3.5s, skip button, localStorage flag, mobile-aware text.
 **Result:** Shipped. Non-blocking tips that only show once. Clean and unobtrusive.
 
+## Decision #17 - Procedural Click Sounds (Mar 20, 2026)
+**Problem:** Interactions felt flat with no audio feedback.
+**Decision:** 4 procedural Web Audio sounds: building click (pitch mapped to height), panel close (filtered noise whoosh), screenshot (shutter sweep), mode switch (sine tick). Respects mute state. 0.05-0.15 volume.
+**Result:** Shipped. Tactile, premium audio feedback. Zero audio files.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
-2. Building click sound effects
-3. City stats dashboard (total buildings, genre breakdown)
-4. Weather effects (rain, snow particles based on mood)
-5. Day/night auto-cycle option
+2. City stats dashboard (total buildings, genre breakdown)
+3. Weather effects (rain, snow particles based on mood)
+4. Day/night auto-cycle option
