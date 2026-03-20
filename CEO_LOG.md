@@ -70,8 +70,15 @@
 **Decision:** Camera button hides all UI, shows minimal capture toolbar. WebGL canvas grabbed as PNG with white flash feedback. Escape to exit. preserveDrawingBuffer enabled.
 **Result:** Shipped. Users can frame their shot with full camera control, capture high-res PNG, download instantly.
 
+## Decision #15 - Building Variety (Mar 20, 2026)
+**Problem:** Only 1 building per genre - cities with many same-genre artists looked repetitive.
+**Decision:** Added 2 variants per genre (14 total new buildings). Deterministic selection via artist name hash. Crystalline shards, water towers, bell towers, domes, smokestacks, greenhouses, etc. Each with animation details.
+**Result:** Shipped. 21 total building types (3 per genre). Same artist always gets same building, but skylines now have real variety.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
-2. More building variety - more genre-specific architecture
+2. Intro tutorial / onboarding for new users
+3. Building click sound effects
+4. City stats dashboard (total buildings, genre breakdown)

@@ -275,6 +275,7 @@ export default function Home() {
   const [cityLoading, setCityLoading] = useState(false);
   const [screenshotMode, setScreenshotMode] = useState(false);
   const [captureFlash, setCaptureFlash] = useState(false);
+  const [onboardingTip, setOnboardingTip] = useState(-1); // -1 = not started, 0/1/2 = tip index, 3 = done
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -333,6 +334,32 @@ export default function Home() {
   useEffect(() => {
     if (status === 'authenticated') setHeroVisible(false);
   }, [status]);
+
+  // Onboarding tips for first-time users
+  useEffect(() => {
+    if (heroVisible || loading || onboardingTip >= 0) return;
+    if (typeof window !== 'undefined' && localStorage.getItem('spotify-city-tutorial-seen')) return;
+    setOnboardingTip(0);
+    const t1 = setTimeout(() => setOnboardingTip(1), 3500);
+    const t2 = setTimeout(() => setOnboardingTip(2), 7000);
+    const t3 = setTimeout(() => {
+      setOnboardingTip(3);
+      localStorage.setItem('spotify-city-tutorial-seen', '1');
+    }, 10500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, [heroVisible, loading, onboardingTip]);
+
+  const skipOnboarding = useCallback(() => {
+    setOnboardingTip(3);
+    localStorage.setItem('spotify-city-tutorial-seen', '1');
+  }, []);
+
+  const isMobile = typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
+  const onboardingTips = [
+    'Click any building to see the artist',
+    isMobile ? 'Touch and drag to explore' : 'Use WASD or drag to explore',
+    'Press ? for all shortcuts',
+  ];
 
   // Escape to close panels or exit screenshot mode
   useEffect(() => {
@@ -522,6 +549,31 @@ export default function Home() {
           </svg>
         </button>
       )}
+
+      {/* Onboarding tips */}
+      {onboardingTip >= 0 && onboardingTip < 3 && (
+        <div
+          key={onboardingTip}
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-3 rounded-full px-6 py-3 text-sm text-white/90"
+          style={{
+            background: 'rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(12px)',
+            animation: 'tipFadeInOut 3.5s ease forwards',
+          }}
+        >
+          <span>{onboardingTips[onboardingTip]}</span>
+          <button onClick={skipOnboarding} className="text-white/40 hover:text-white/70 text-xs ml-1 transition-colors">Skip</button>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes tipFadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(8px); }
+          12% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
