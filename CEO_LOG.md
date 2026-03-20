@@ -60,10 +60,14 @@
 **Decision:** Pixel font (Silkscreen) reserved ONLY for "SPOTIFY CITY" branding. Everything else uses Inter. Added font smoothing, global letter-spacing, proper line-height. ShareCard unified to Inter + Silkscreen logo.
 **Result:** Shipped. Clean premium type hierarchy - pixel font = brand identity, Inter = everything else.
 
+## Decision #13 - Keyboard Shortcuts Overlay (Mar 20, 2026)
+**Problem:** Users had no way to discover keybindings for movement, camera, etc.
+**Decision:** Dark glass modal triggered by '?' key. Grouped shortcuts: Movement, Camera, Time of Day, Interface. '?' button in control panel (hidden on mobile). Styled to match existing UI with Spotify green headers.
+**Result:** Shipped. Discoverable shortcuts, clean design, keyboard and button trigger.
+
 ---
 
 ## Backlog (prioritized)
-3. Leaderboard view - compare cities with friends
-4. More building variety - more genre-specific architecture
-5. Keyboard shortcuts overlay (? key)
-6. Screenshot mode (hide UI, high-res capture)
+1. Leaderboard view - compare cities with friends
+2. More building variety - more genre-specific architecture
+3. Screenshot mode (hide UI, high-res capture)

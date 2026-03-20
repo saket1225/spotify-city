@@ -1199,7 +1199,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
       <Canvas
         camera={{ position: [80, 50, 80], fov: 50 }}
         style={{ width: '100%', height: '100%' }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, preserveDrawingBuffer: true }}
       >
         <CameraTracker onUpdate={handleCameraUpdate} />
 

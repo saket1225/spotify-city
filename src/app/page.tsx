@@ -273,6 +273,8 @@ export default function Home() {
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [loadingStats, setLoadingStats] = useState<string | null>(null);
   const [cityLoading, setCityLoading] = useState(false);
+  const [screenshotMode, setScreenshotMode] = useState(false);
+  const [captureFlash, setCaptureFlash] = useState(false);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -332,17 +334,35 @@ export default function Home() {
     if (status === 'authenticated') setHeroVisible(false);
   }, [status]);
 
-  // Escape to close panels
+  // Escape to close panels or exit screenshot mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (screenshotMode) { setScreenshotMode(false); return; }
         if (selectedBuilding) { setSelectedBuilding(null); return; }
         if (shareCardBuilding) { setShareCardBuilding(null); return; }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedBuilding, shareCardBuilding]);
+  }, [selectedBuilding, shareCardBuilding, screenshotMode]);
+
+  // Capture screenshot from WebGL canvas
+  const handleCapture = useCallback(() => {
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    setCaptureFlash(true);
+    setTimeout(() => setCaptureFlash(false), 200);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'spotify-city.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }, []);
 
   // User's name and hours for the bottom stat
   const userName = userProfile?.displayName || (status === 'authenticated' ? session?.user?.name : null);
@@ -366,7 +386,7 @@ export default function Home() {
       )}
 
       {/* Minimal header: title left, avatar right */}
-      {!heroVisible && !loading && (
+      {!heroVisible && !loading && !screenshotMode && (
         <header className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-4">
           <span
             className="font-pixel text-sm tracking-[0.15em] text-[#1DB954]"
@@ -394,12 +414,12 @@ export default function Home() {
           buildings={allBuildings}
           onBuildingClick={handleBuildingClick}
           focusPosition={focusPosition}
-          hideControls={heroVisible || loading}
+          hideControls={heroVisible || loading || screenshotMode}
         />
       </main>
 
       {/* Bottom stat: user name + hours */}
-      {!heroVisible && !loading && userName && userHours && (
+      {!heroVisible && !loading && !screenshotMode && userName && userHours && (
         <div className="fixed bottom-5 left-5 z-10">
           <p className="text-xs text-gray-500 tracking-wide">
             <span className="text-gray-400 font-medium">{userName}</span>
@@ -410,7 +430,7 @@ export default function Home() {
       )}
 
       {/* Floating Share button */}
-      {!heroVisible && !loading && (
+      {!heroVisible && !loading && !screenshotMode && (
         <button
           onClick={() => {
             const myBuilding = allBuildings.find((b) => b.isCurrentUser) || allBuildings[0];
@@ -448,8 +468,59 @@ export default function Home() {
       )}
 
       {/* Social proof ticker (orbit mode only, city view) */}
-      {!heroVisible && !loading && (
+      {!heroVisible && !loading && !screenshotMode && (
         <SocialTicker buildings={allBuildings} />
+      )}
+
+      {/* Screenshot mode toolbar */}
+      {screenshotMode && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-full px-5 py-2.5"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <button
+            onClick={handleCapture}
+            className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-black transition-all hover:scale-105 active:scale-95"
+            style={{ background: '#1DB954' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+              <polyline points="16 6 12 2 8 6"/>
+              <line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            Capture
+          </button>
+          <button
+            onClick={() => setScreenshotMode(false)}
+            className="rounded-full px-4 py-2 text-sm font-medium transition-all hover:scale-105 active:scale-95"
+            style={{ color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)' }}
+          >
+            Exit
+          </button>
+        </div>
+      )}
+
+      {/* Capture flash */}
+      {captureFlash && (
+        <div className="fixed inset-0 z-[100] pointer-events-none bg-white/30" style={{ animation: 'fadeOut 200ms ease-out forwards' }} />
+      )}
+
+      {/* Screenshot mode button (in controls area) */}
+      {!heroVisible && !loading && !screenshotMode && (
+        <button
+          onClick={() => setScreenshotMode(true)}
+          title="Screenshot Mode"
+          className="fixed top-[60px] right-[60px] sm:right-[56px] z-20 w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+          style={{
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(8,9,10,0.7)',
+            backdropFilter: 'blur(10px)',
+            color: 'rgba(255,255,255,0.5)',
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
       )}
     </div>
   );
