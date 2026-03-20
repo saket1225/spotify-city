@@ -11,15 +11,35 @@ import ShareCard from '@/components/ShareCard';
 
 const City = dynamic(() => import('@/components/City'), { ssr: false });
 
+/* ── Storytelling loading phases ── */
+const LOADING_PHASES = [
+  'Scanning your library...',
+  'Mapping your genres...',
+  'Building your skyline...',
+  'Welcome to your city',
+];
+
 /* ── Loading screen: skyline rises from the ground ── */
 function SkylineLoader({ stats }: { stats: string | null }) {
   const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState(0);
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setProgress((p) => Math.min(p + 0.02, 1));
     }, 30);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setPhase(1), 1000),
+      setTimeout(() => setPhase(2), 2000),
+      setTimeout(() => setPhase(3), 3200),
+      setTimeout(() => setFadeOut(true), 4000),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   const buildings = useMemo(() => {
@@ -33,7 +53,13 @@ function SkylineLoader({ stats }: { stats: string | null }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#08090a]">
+    <div
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#08090a]"
+      style={{
+        opacity: fadeOut ? 0 : 1,
+        transition: 'opacity 0.8s ease-out',
+      }}
+    >
       <div className="flex flex-col items-center gap-8">
         <div className="relative w-[380px] h-[120px] overflow-hidden">
           <svg width="380" height="120" viewBox="0 0 390 120">
@@ -58,8 +84,16 @@ function SkylineLoader({ stats }: { stats: string | null }) {
             <line x1="0" y1="119" x2="390" y2="119" stroke="#1DB954" strokeWidth="1" opacity="0.4" />
           </svg>
         </div>
-        <p className="font-pixel text-lg text-gray-400 tracking-wide">Building your city...</p>
-        {stats && (
+        <p
+          className="font-pixel text-lg tracking-wide"
+          style={{
+            color: phase === 3 ? '#1DB954' : '#9ca3af',
+            transition: 'color 0.5s ease',
+          }}
+        >
+          {LOADING_PHASES[phase]}
+        </p>
+        {stats && phase < 3 && (
           <p className="text-sm text-gray-500 animate-pulse">{stats}</p>
         )}
       </div>
@@ -81,7 +115,7 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
       {/* Dark vignette overlay - more transparent to show city */}
       <div
         className="fixed inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.45) 0%, rgba(8,9,10,0.85) 60%, rgba(8,9,10,0.95) 100%)' }}
+        style={{ background: 'radial-gradient(ellipse at center, rgba(8,9,10,0.3) 0%, rgba(8,9,10,0.6) 50%, rgba(8,9,10,0.7) 100%)' }}
       />
 
       {/* Hero section */}
@@ -131,17 +165,19 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
             Explore Demo City
           </button>
 
-          <p className="mt-8 text-gray-600 text-[11px] tracking-wider">
-            built by <span className="text-gray-500">@codanium_</span>
-          </p>
         </div>
 
         {/* Scroll indicator */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-bounce">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(29,185,84,0.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px rgba(29,185,84,0.3))' }}>
             <polyline points="6 9 12 15 18 9" />
           </svg>
         </div>
+
+        {/* Attribution */}
+        <p className="absolute bottom-4 right-5 text-gray-600 text-[10px] tracking-wider">
+          built by <span className="text-gray-500">@codanium_</span>
+        </p>
       </div>
 
       {/* Feature cards below the fold */}
@@ -150,16 +186,16 @@ function HeroOverlay({ onExploreDemo }: { onExploreDemo: () => void }) {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-2xl p-6 text-center transition-all duration-300 hover:scale-[1.03]"
+              className="rounded-2xl p-8 text-center transition-all duration-300 hover:scale-[1.03] hover:border-[#1DB954]/20"
               style={{
-                background: 'rgba(255,255,255,0.03)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.06)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255,255,255,0.08)',
               }}
             >
-              <div className="text-2xl mb-3">{f.emoji}</div>
-              <h3 className="text-white/80 text-sm font-semibold tracking-wide mb-1.5">{f.title}</h3>
-              <p className="text-gray-500 text-xs leading-relaxed">{f.desc}</p>
+              <div className="text-3xl mb-4">{f.emoji}</div>
+              <h3 className="text-white/90 text-base font-semibold tracking-wide mb-2">{f.title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
@@ -224,7 +260,7 @@ export default function Home() {
 
   // Hide loading after delay for Three.js init
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2200);
+    const timer = setTimeout(() => setLoading(false), 4800);
     return () => clearTimeout(timer);
   }, []);
 
