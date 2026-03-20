@@ -60,8 +60,8 @@ const TIME_PRESETS: Record<TimeOfDay, {
     skyHorizon: [0.04, 0.04, 0.12],
     skyZenith: [0.01, 0.01, 0.02],
     fog: '#0a0a1e',
-    fogNear: 25,
-    fogFar: 85,
+    fogNear: 80,
+    fogFar: 350,
     ambient: 0.15,
     hemiSky: '#1a1a3a',
     hemiGround: '#080810',
@@ -81,8 +81,8 @@ const TIME_PRESETS: Record<TimeOfDay, {
     skyHorizon: [0.35, 0.2, 0.35],
     skyZenith: [0.1, 0.05, 0.2],
     fog: '#2a1a2e',
-    fogNear: 30,
-    fogFar: 100,
+    fogNear: 90,
+    fogFar: 400,
     ambient: 0.3,
     hemiSky: '#4a3060',
     hemiGround: '#1a1020',
@@ -102,8 +102,8 @@ const TIME_PRESETS: Record<TimeOfDay, {
     skyHorizon: [0.55, 0.7, 0.9],
     skyZenith: [0.2, 0.35, 0.7],
     fog: '#88aacc',
-    fogNear: 40,
-    fogFar: 120,
+    fogNear: 100,
+    fogFar: 450,
     ambient: 0.6,
     hemiSky: '#88bbff',
     hemiGround: '#445566',
@@ -123,8 +123,8 @@ const TIME_PRESETS: Record<TimeOfDay, {
     skyHorizon: [0.7, 0.3, 0.15],
     skyZenith: [0.15, 0.08, 0.2],
     fog: '#3a2018',
-    fogNear: 30,
-    fogFar: 95,
+    fogNear: 85,
+    fogFar: 380,
     ambient: 0.35,
     hemiSky: '#ff8844',
     hemiGround: '#221510',
@@ -279,7 +279,7 @@ function AnimatedGround({ time }: { time: TimeOfDay }) {
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-      <planeGeometry args={[200, 200]} />
+      <planeGeometry args={[600, 600]} />
       <meshStandardMaterial ref={ref} color="#0a0a12" roughness={0.9} metalness={0.1} />
     </mesh>
   );
@@ -426,7 +426,7 @@ function AnimatedGrid({ buildings, time }: { buildings: BuildingParams[]; time: 
 
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
-      <planeGeometry args={[200, 200, 100, 100]} />
+      <planeGeometry args={[600, 600, 100, 100]} />
       <shaderMaterial
         ref={ref}
         transparent
@@ -953,7 +953,7 @@ function SmartOrbitControls({ enabled = true, orbitRef }: {
       enableDamping
       dampingFactor={0.05}
       minDistance={8}
-      maxDistance={65}
+      maxDistance={300}
       maxPolarAngle={Math.PI / 2.05}
       autoRotate
       autoRotateSpeed={0.3}

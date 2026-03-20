@@ -11,6 +11,7 @@ export interface SpotifyProfile {
   topGenres: string[];
   topArtists: { name: string; imageUrl: string; genres: string[] }[];
   topTracks: { name: string; artist: string; albumArt: string }[];
+  accountAge?: number; // years
 }
 
 export type BuildingStyle = 'skyscraper' | 'fortress' | 'neon-tower' | 'penthouse' | 'brownstone' | 'cathedral' | 'modern';

@@ -103,12 +103,12 @@ function getGenreStyle(genres: string[]): BuildingStyle {
 
 // Genre district definitions
 export const GENRE_DISTRICTS: { name: string; label: string; center: [number, number]; radius: number; keywords: string[] }[] = [
-  { name: 'pop', label: 'POP', center: [0, 0], radius: 25, keywords: ['pop', 'dance pop', 'synth pop', 'k-pop', 'korean pop', 'j-pop', 'latin pop'] },
-  { name: 'rock', label: 'ROCK', center: [40, -30], radius: 22, keywords: ['rock', 'metal', 'heavy metal', 'thrash metal', 'punk', 'punk rock', 'grunge', 'alternative'] },
-  { name: 'hiphop', label: 'HIP-HOP', center: [-35, -25], radius: 22, keywords: ['hip hop', 'hip-hop', 'rap', 'trap', 'r&b', 'neo soul', 'soul'] },
-  { name: 'electronic', label: 'ELECTRONIC', center: [-30, 35], radius: 22, keywords: ['electronic', 'edm', 'house', 'techno', 'synthwave', 'future bass', 'dubstep', 'ambient', 'chillhop'] },
-  { name: 'indie', label: 'INDIE', center: [35, 30], radius: 22, keywords: ['indie', 'folk', 'singer-songwriter', 'indie folk', 'americana', 'country', 'bluegrass'] },
-  { name: 'classical', label: 'CLASSICAL', center: [0, -45], radius: 22, keywords: ['classical', 'jazz', 'orchestral', 'piano', 'blues', 'cello', 'violin'] },
+  { name: 'pop', label: 'POP', center: [0, 0], radius: 80, keywords: ['pop', 'dance pop', 'synth pop', 'k-pop', 'korean pop', 'j-pop', 'latin pop'] },
+  { name: 'rock', label: 'ROCK', center: [160, -120], radius: 70, keywords: ['rock', 'metal', 'heavy metal', 'thrash metal', 'punk', 'punk rock', 'grunge', 'alternative'] },
+  { name: 'hiphop', label: 'HIP-HOP', center: [-140, -100], radius: 70, keywords: ['hip hop', 'hip-hop', 'rap', 'trap', 'r&b', 'neo soul', 'soul'] },
+  { name: 'electronic', label: 'ELECTRONIC', center: [-120, 140], radius: 70, keywords: ['electronic', 'edm', 'house', 'techno', 'synthwave', 'future bass', 'dubstep', 'ambient', 'chillhop'] },
+  { name: 'indie', label: 'INDIE', center: [140, 120], radius: 70, keywords: ['indie', 'folk', 'singer-songwriter', 'indie folk', 'americana', 'country', 'bluegrass'] },
+  { name: 'classical', label: 'CLASSICAL', center: [0, -180], radius: 70, keywords: ['classical', 'jazz', 'orchestral', 'piano', 'blues', 'cello', 'violin'] },
 ];
 
 function getDistrict(genres: string[]): typeof GENRE_DISTRICTS[number] {
@@ -163,9 +163,8 @@ export function generateBuildingParams(
 
   // Deterministic random angle and spread within district
   const angle = seededRand(index * 73 + 17) * Math.PI * 2;
-  const minSpread = 3 + index * 0.5; // minimum distance from center to prevent stacking
   const rawSpread = seededRand(index * 137 + 53) * district.radius * distanceFactor;
-  const spread = Math.max(minSpread, rawSpread);
+  const spread = Math.max(3, rawSpread); // minimum 3 units from center
 
   const x = district.center[0] + Math.cos(angle) * spread;
   const z = district.center[1] + Math.sin(angle) * spread;
@@ -190,43 +189,6 @@ export function generateBuildingParams(
 }
 
 export function generateDemoBuildings(profiles: SpotifyProfile[]): BuildingParams[] {
-  const placed: { x: number; z: number; radius: number }[] = [];
-
-  return profiles.map((p, i) => {
-    const params = generateBuildingParams(p, i);
-    const minDist = Math.max(params.width, params.depth) * 1.5 + 1;
-
-    let x = params.position[0];
-    let z = params.position[2];
-    let attempts = 0;
-
-    while (attempts < 50) {
-      let overlapping = false;
-      for (const pl of placed) {
-        const dx = x - pl.x;
-        const dz = z - pl.z;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist < minDist + pl.radius) {
-          overlapping = true;
-          break;
-        }
-      }
-      if (!overlapping) break;
-      // Nudge outward with some angular variation to avoid all going same direction
-      const district = getDistrict(params.profile.topGenres);
-      const dx = x - district.center[0];
-      const dz = z - district.center[1];
-      const atCenter = Math.abs(dx) < 0.5 && Math.abs(dz) < 0.5;
-      const nudgeAngle = atCenter
-        ? seededRand(i * 31 + attempts * 7) * Math.PI * 2  // random direction if at center
-        : Math.atan2(dz, dx) + (seededRand(attempts * 13 + i) - 0.5) * 0.8; // outward with jitter
-      x += Math.cos(nudgeAngle) * 3;
-      z += Math.sin(nudgeAngle) * 3;
-      attempts++;
-    }
-
-    params.position = [x, 0, z];
-    placed.push({ x, z, radius: minDist / 2 });
-    return params;
-  });
+  // With large districts (radius 70-80) and 1200 buildings, simple spacing works
+  return profiles.map((p, i) => generateBuildingParams(p, i));
 }
