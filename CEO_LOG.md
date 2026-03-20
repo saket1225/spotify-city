@@ -35,11 +35,16 @@
 **Decision:** Full redesign - dark glass card with genre gradients, stats grid, top 3 artists, genre pills, CSS city skyline, QR code, download/copy/share buttons.
 **Result:** Shipped. Card is portrait-optimized (540x960), download as PNG via html2canvas, Web Share API support.
 
+## Decision #8 - Full Mobile Responsiveness (Mar 20, 2026)
+**Problem:** Touch controls didn't exist, hero too large on mobile, detail panel wrong layout, minimap overlapping.
+**Decision:** Virtual joystick for explore mode, responsive hero typography, bottom-sheet ProfileCard on mobile, 44px tap targets, scaled share card, hidden minimap on small screens.
+**Result:** Shipped. Full touch support with joystick, pinch zoom, responsive layouts across all components.
+
 ---
 
 ## Backlog (prioritized)
-1. Mobile experience - need to verify responsiveness
-2. Sound design - ambient city sounds per time of day
-3. Social proof - live activity ticker (inspired by GitCity)
-4. Confetti/celebration on city reveal
-5. Typography polish - evaluate pixel font vs clean sans-serif
+1. Sound design - ambient city sounds per time of day
+2. Social proof - live activity ticker (inspired by GitCity)
+3. Confetti/celebration on city reveal
+4. Typography polish - evaluate pixel font vs clean sans-serif
+5. Building name labels floating above buildings in the city

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useSession, signIn } from 'next-auth/react';
 import { getSampleBuildings } from '@/lib/sampleData';
@@ -8,8 +8,67 @@ import { generateBuildingParams } from '@/lib/buildingGenerator';
 import { BuildingParams, SpotifyProfile } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import ShareCard from '@/components/ShareCard';
+import confetti from 'canvas-confetti';
 
 const City = dynamic(() => import('@/components/City'), { ssr: false });
+
+/* ── Confetti burst (once per session) ── */
+let confettiFired = false;
+function fireConfetti() {
+  if (confettiFired) return;
+  confettiFired = true;
+  const colors = ['#1DB954', '#FFD700', '#FFFFFF'];
+  const end = Date.now() + 2500;
+  const frame = () => {
+    confetti({
+      particleCount: 8,
+      angle: 90 + (Math.random() - 0.5) * 60,
+      spread: 80,
+      origin: { x: 0.5, y: 1 },
+      colors,
+      gravity: 0.8,
+      scalar: 1.1,
+      ticks: 120,
+    });
+    if (Date.now() < end) requestAnimationFrame(frame);
+  };
+  // Initial big burst
+  confetti({ particleCount: 200, spread: 100, origin: { x: 0.5, y: 1 }, colors, gravity: 0.7, scalar: 1.2, ticks: 150 });
+  requestAnimationFrame(frame);
+}
+
+/* ── Social proof ticker ── */
+function SocialTicker({ buildings }: { buildings: BuildingParams[] }) {
+  const messages = useMemo(() => {
+    const msgs: string[] = [];
+    for (const b of buildings) {
+      const p = b.profile;
+      const genre = p.topGenres?.[0] || 'music';
+      msgs.push(`🏙️ ${p.displayName} built a ${genre} tower`);
+      if (p.estimatedListeningHours > 1000) {
+        msgs.push(`🎵 ${p.displayName} has listened for ${p.estimatedListeningHours.toLocaleString()} hours`);
+      }
+      msgs.push(`🎸 ${p.displayName} joined the city`);
+    }
+    return msgs;
+  }, [buildings]);
+
+  const text = messages.join('  ·  ') + '  ·  ' + messages.join('  ·  ');
+
+  return (
+    <div
+      className="fixed bottom-0 left-0 right-0 z-10 overflow-hidden whitespace-nowrap"
+      style={{ opacity: 0.35 }}
+    >
+      <div
+        className="inline-block animate-ticker hover:[animation-play-state:paused] py-2 text-xs text-gray-400 tracking-wide"
+        style={{ paddingLeft: '100%' }}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
 
 /* ── Storytelling loading phases ── */
 const LOADING_PHASES = [
@@ -259,9 +318,12 @@ export default function Home() {
     }
   };
 
-  // Hide loading after delay for Three.js init
+  // Hide loading after delay for Three.js init, fire confetti on reveal
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 4800);
+    const timer = setTimeout(() => {
+      setLoading(false);
+      fireConfetti();
+    }, 4800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -383,6 +445,11 @@ export default function Home() {
           profile={shareCardBuilding.profile}
           onClose={() => setShareCardBuilding(null)}
         />
+      )}
+
+      {/* Social proof ticker (orbit mode only, city view) */}
+      {!heroVisible && !loading && (
+        <SocialTicker buildings={allBuildings} />
       )}
     </div>
   );

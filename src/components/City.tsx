@@ -2,7 +2,7 @@
 
 import { useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import Building from './Building';
@@ -913,6 +913,64 @@ function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number],
   return null;
 }
 
+/* ── Floating artist labels (orbit mode, top 5 tallest) ── */
+function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; visible: boolean }) {
+  const top5 = useMemo(() => {
+    return [...buildings].sort((a, b) => b.height - a.height).slice(0, 5);
+  }, [buildings]);
+
+  const { camera } = useThree();
+  const [opacities, setOpacities] = useState<number[]>([0, 0, 0, 0, 0]);
+  const frameCount = useRef(0);
+
+  useFrame(() => {
+    if (!visible) return;
+    if (++frameCount.current % 6 !== 0) return;
+    const newOp = top5.map((b) => {
+      const dist = camera.position.distanceTo(new THREE.Vector3(...b.position));
+      if (dist > 40) return 0;
+      if (dist < 20) return 1;
+      return 1 - (dist - 20) / 20;
+    });
+    setOpacities(newOp);
+  });
+
+  if (!visible) return null;
+
+  return (
+    <>
+      {top5.map((b, i) => (
+        <Html
+          key={b.profile.id}
+          position={[b.position[0], b.height + 1.5, b.position[2]]}
+          center
+          distanceFactor={12}
+          style={{
+            opacity: opacities[i],
+            transition: 'opacity 0.3s',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(6px)',
+            padding: '3px 8px',
+            borderRadius: 6,
+            fontSize: 11,
+            color: '#fff',
+            whiteSpace: 'nowrap',
+            fontFamily: 'system-ui',
+            letterSpacing: '0.02em',
+            border: '1px solid rgba(255,255,255,0.1)',
+          }}>
+            {b.profile.topArtists?.[0]?.name || b.profile.displayName}
+          </div>
+        </Html>
+      ))}
+    </>
+  );
+}
+
 /* ── Main City export ── */
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
@@ -1122,6 +1180,8 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             onClick={handleBuildingDoubleClick}
           />
         ))}
+
+        <FloatingLabels buildings={buildings} visible={cameraMode === 'orbit' && introComplete} />
 
         {!introComplete && <CinematicIntro onComplete={handleIntroComplete} />}
 
