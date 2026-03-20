@@ -29,4 +29,5 @@ export interface BuildingParams {
   isCurrentUser?: boolean;
   dimmed?: boolean;
   highlighted?: boolean;
+  variant?: number;
 }

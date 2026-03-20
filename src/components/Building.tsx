@@ -934,6 +934,684 @@ function ModernBuilding({ height, width, depth, primaryColor, secondaryColor, ac
   );
 }
 
+/* ── Cathedral Variant 1: Dome Conservatory (Jazz/Classical) ── */
+function DomeConservatory({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Wide base */}
+      <mesh position={[0, height * 0.4, 0]}>
+        <boxGeometry args={[width * 1.2, height * 0.8, depth * 1.2]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.5} metalness={0.4} emissive={primaryColor} emissiveIntensity={0.07} />
+      </mesh>
+      {/* Dome on top */}
+      <mesh position={[0, height * 0.85, 0]}>
+        <sphereGeometry args={[width * 0.55, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.2} metalness={0.6} emissive={accentColor} emissiveIntensity={0.15} />
+      </mesh>
+      {/* Small columns around base */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const angle = (i / 6) * Math.PI * 2;
+        return (
+          <mesh key={`col-${i}`} position={[Math.cos(angle) * width * 0.55, height * 0.4, Math.sin(angle) * depth * 0.55]}>
+            <cylinderGeometry args={[0.07, 0.09, height * 0.8, 6]} />
+            <meshPhysicalMaterial color={accentColor} roughness={0.3} metalness={0.5} />
+          </mesh>
+        );
+      })}
+      {/* Windows on base */}
+      {Array.from({ length: Math.floor(height / 2.5) }, (_, i) => {
+        const y = 1 + i * 2.5;
+        if (y > height * 0.7) return null;
+        return (
+          <mesh key={`win-${i}`} position={[0, y, depth * 0.61]}>
+            <planeGeometry args={[0.3, 0.5]} />
+            <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 7, 0.4, 1.8)} transparent opacity={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Cathedral Variant 2: Bell Tower (Jazz/Classical) ── */
+function BellTower({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const bellRef = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (bellRef.current) {
+      bellRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 1.5 + seed) * 0.08;
+    }
+  });
+  return (
+    <group>
+      {/* Main narrow tower */}
+      <mesh position={[0, height * 0.5, 0]}>
+        <boxGeometry args={[width * 0.7, height, depth * 0.7]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.55} metalness={0.35} emissive={primaryColor} emissiveIntensity={0.06} />
+      </mesh>
+      {/* Open arched belfry section */}
+      <mesh position={[0, height * 0.82, 0]}>
+        <boxGeometry args={[width * 0.75, height * 0.18, depth * 0.75]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.4} metalness={0.5} emissive={accentColor} emissiveIntensity={0.1} />
+      </mesh>
+      {/* Arched openings on belfry */}
+      {[-1, 1].map((side) => (
+        <mesh key={`arch-${side}`} position={[side * width * 0.36, height * 0.82, 0]}>
+          <planeGeometry args={[0.3, height * 0.15]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.6} transparent opacity={0.8} side={THREE.DoubleSide} />
+        </mesh>
+      ))}
+      {/* Cone roof */}
+      <mesh position={[0, height + 0.7, 0]}>
+        <coneGeometry args={[width * 0.4, 1.4, 6]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.3} metalness={0.6} />
+      </mesh>
+      {/* Swaying bell */}
+      <group ref={bellRef} position={[0, height * 0.85, 0]}>
+        <mesh position={[0, 0, 0]}>
+          <cylinderGeometry args={[0.12, 0.2, 0.2, 8, 1, true]} />
+          <meshPhysicalMaterial color={accentColor} roughness={0.2} metalness={0.9} emissive={accentColor} emissiveIntensity={0.2} />
+        </mesh>
+      </group>
+      {/* Windows */}
+      {Array.from({ length: Math.floor(height / 2.5) }, (_, i) => {
+        const y = 1 + i * 2.5;
+        if (y > height * 0.75) return null;
+        return (
+          <mesh key={`win-${i}`} position={[width * 0.36, y, 0]}>
+            <planeGeometry args={[0.25, 0.45]} />
+            <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 11, 0.4, 1.6)} transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Neon-Tower Variant 1: Crystalline Shard (Electronic) ── */
+function CrystallineShard({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const glowRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (glowRef.current) {
+      (glowRef.current.material as THREE.MeshPhysicalMaterial).emissiveIntensity = 0.8 + Math.sin(state.clock.elapsedTime * 2.2 + seed) * 0.6;
+    }
+  });
+  return (
+    <group>
+      {/* Main tilted shard */}
+      <mesh position={[0, height * 0.5, 0]} rotation={[0, 0, 0.27]}>
+        <boxGeometry args={[width * 0.75, height, depth * 0.65]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.05} metalness={0.4} emissive={primaryColor} emissiveIntensity={0.3} transparent opacity={0.85} />
+      </mesh>
+      {/* Secondary shard offset */}
+      <mesh position={[width * 0.2, height * 0.4, depth * 0.1]} rotation={[0.1, 0, -0.18]}>
+        <boxGeometry args={[width * 0.4, height * 0.7, depth * 0.4]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.05} metalness={0.5} emissive={accentColor} emissiveIntensity={0.4} transparent opacity={0.75} />
+      </mesh>
+      {/* Glowing core */}
+      <mesh ref={glowRef} position={[0, height * 0.6, 0]}>
+        <octahedronGeometry args={[width * 0.25, 0]} />
+        <meshPhysicalMaterial color={accentColor} roughness={0.0} metalness={1.0} emissive={accentColor} emissiveIntensity={1.2} transparent opacity={0.9} />
+      </mesh>
+      {/* LED strips */}
+      {[-1, 1].map((s) => (
+        <mesh key={`strip-${s}`} position={[s * width * 0.36, height * 0.5, 0]}>
+          <boxGeometry args={[0.04, height * 0.85, 0.04]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ── Neon-Tower Variant 2: Floating Platform (Electronic) ── */
+function FloatingPlatform({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const topRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (topRef.current) {
+      topRef.current.position.y = height * 0.88 + Math.sin(state.clock.elapsedTime * 1.3 + seed) * 0.18;
+    }
+  });
+  const tiers = 4;
+  return (
+    <group>
+      {/* Stack of thin platforms with gaps */}
+      {Array.from({ length: tiers - 1 }, (_, i) => {
+        const t = i / (tiers - 1);
+        const y = (height * 0.7 / tiers) * i + height * 0.05;
+        const scale = 1 - t * 0.2;
+        return (
+          <mesh key={`tier-${i}`} position={[0, y, 0]}>
+            <cylinderGeometry args={[width * 0.5 * scale, width * 0.52 * scale, height * 0.12, 8]} />
+            <meshPhysicalMaterial color={i % 2 === 0 ? primaryColor : secondaryColor} roughness={0.1} metalness={0.7} emissive={primaryColor} emissiveIntensity={0.2 + t * 0.2} />
+          </mesh>
+        );
+      })}
+      {/* Bobbing top tier */}
+      <mesh ref={topRef} position={[0, height * 0.88, 0]}>
+        <cylinderGeometry args={[width * 0.35, width * 0.37, height * 0.14, 8]} />
+        <meshPhysicalMaterial color={accentColor} roughness={0.05} metalness={0.8} emissive={accentColor} emissiveIntensity={0.6} />
+      </mesh>
+      {/* Central column */}
+      <mesh position={[0, height * 0.45, 0]}>
+        <cylinderGeometry args={[0.1, 0.12, height * 0.9, 6]} />
+        <meshPhysicalMaterial color="#222222" roughness={0.2} metalness={0.9} emissive={accentColor} emissiveIntensity={0.3} />
+      </mesh>
+      {/* Emissive rings between tiers */}
+      {[0.25, 0.5, 0.72].map((t, i) => (
+        <mesh key={`ring-${i}`} position={[0, height * t, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[width * 0.55, 0.04, 4, 12]} />
+          <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.2} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ── Fortress Variant 1: Brutalist Bunker (Rock) ── */
+function BrutalistBunker({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Heavy low main body */}
+      <mesh position={[0, height * 0.35, 0]}>
+        <boxGeometry args={[width * 1.3, height * 0.7, depth * 1.3]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.9} metalness={0.1} emissive={primaryColor} emissiveIntensity={0.04} />
+      </mesh>
+      {/* Upper block - slightly smaller */}
+      <mesh position={[width * 0.1, height * 0.8, depth * 0.05]}>
+        <boxGeometry args={[width * 0.9, height * 0.3, depth * 0.85]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.85} metalness={0.15} emissive={primaryColor} emissiveIntensity={0.05} />
+      </mesh>
+      {/* Concrete slab on top */}
+      <mesh position={[0, height + 0.15, 0]}>
+        <boxGeometry args={[width * 1.35, 0.3, depth * 1.35]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.95} metalness={0.05} />
+      </mesh>
+      {/* Slit windows */}
+      {Array.from({ length: Math.floor(height / 2.5) }, (_, i) => {
+        const y = 1.2 + i * 2.5;
+        if (y > height * 0.85) return null;
+        return (
+          <group key={`slit-${i}`}>
+            {[-1, 1].map((side) => (
+              <mesh key={`s-${side}`} position={[side * width * 0.66, y, 0]}>
+                <planeGeometry args={[0.5, 0.15]} />
+                <meshStandardMaterial color="#ffaa44" emissive="#ff8800" emissiveIntensity={seededRange(seed + i * side * 5, 0.2, 1.2)} transparent opacity={0.85} side={THREE.DoubleSide} />
+              </mesh>
+            ))}
+          </group>
+        );
+      })}
+      {/* Surface texture blocks */}
+      {[0.2, 0.5, 0.75].map((t, i) => (
+        <mesh key={`tex-${i}`} position={[0, height * t, depth * 0.66]}>
+          <boxGeometry args={[width * 0.4, 0.08, 0.06]} />
+          <meshPhysicalMaterial color={accentColor} roughness={0.9} metalness={0.1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ── Fortress Variant 2: Smokestack Factory (Rock) ── */
+function SmokestackFactory({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const lightRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (lightRef.current) {
+      (lightRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.2 + Math.sin(state.clock.elapsedTime * 3 + seed) * 1.2;
+    }
+  });
+  return (
+    <group>
+      {/* Box base factory */}
+      <mesh position={[0, height * 0.45, 0]}>
+        <boxGeometry args={[width * 1.1, height * 0.9, depth * 1.1]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.7} metalness={0.5} emissive={primaryColor} emissiveIntensity={0.06} />
+      </mesh>
+      {/* Smokestacks */}
+      {[[-width * 0.25, height, depth * 0.1], [width * 0.15, height + 0.3, -depth * 0.15], [width * 0.35, height - 0.2, depth * 0.25]].map(([sx, sy, sz], i) => (
+        <group key={`stack-${i}`}>
+          <mesh position={[sx, sy + (height * 0.25 + i * 0.15) * 0.5, sz]}>
+            <cylinderGeometry args={[0.1 - i * 0.02, 0.14 - i * 0.02, height * 0.25 + i * 0.15, 8]} />
+            <meshPhysicalMaterial color="#333333" roughness={0.5} metalness={0.8} />
+          </mesh>
+          {/* Stack top ring */}
+          <mesh position={[sx, sy + height * 0.25 + i * 0.15, sz]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.14 - i * 0.02, 0.025, 4, 8]} />
+            <meshPhysicalMaterial color="#555555" roughness={0.4} metalness={0.9} />
+          </mesh>
+        </group>
+      ))}
+      {/* Industrial windows */}
+      {Array.from({ length: Math.floor(height / 2.5) }, (_, i) => {
+        const y = 1.5 + i * 2.5;
+        if (y > height * 0.8) return null;
+        return (
+          <mesh key={`win-${i}`} position={[0, y, depth * 0.56]}>
+            <planeGeometry args={[0.5, 0.3]} />
+            <meshStandardMaterial color="#ffaa44" emissive="#ff8800" emissiveIntensity={seededRange(seed + i * 9, 0.3, 1.4)} transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+      {/* Warning light */}
+      <mesh ref={lightRef} position={[0, height + 0.5, 0]}>
+        <sphereGeometry args={[0.12, 6, 6]} />
+        <meshStandardMaterial color="#ff3333" emissive="#ff3333" emissiveIntensity={2} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ── Penthouse Variant 1: Water Tower Building (Hip-Hop) ── */
+function WaterTowerBuilding({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Main box base - half height-ish */}
+      <mesh position={[0, height * 0.4, 0]}>
+        <boxGeometry args={[width, height * 0.8, depth]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.55} metalness={0.35} emissive={primaryColor} emissiveIntensity={0.08} />
+      </mesh>
+      {/* Water tower structure on top */}
+      <group position={[width * 0.15, height * 0.85, -depth * 0.1]}>
+        {/* Legs */}
+        {[[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].map(([lx, lz], i) => (
+          <mesh key={`leg-${i}`} position={[lx, 0.4, lz]}>
+            <boxGeometry args={[0.05, 0.8, 0.05]} />
+            <meshPhysicalMaterial color="#555" roughness={0.5} metalness={0.75} />
+          </mesh>
+        ))}
+        {/* Tank cylinder */}
+        <mesh position={[0, 1.05, 0]}>
+          <cylinderGeometry args={[0.3, 0.3, 0.65, 10]} />
+          <meshPhysicalMaterial color="#3a3a3a" roughness={0.6} metalness={0.55} />
+        </mesh>
+        {/* Tank cone cap */}
+        <mesh position={[0, 1.42, 0]}>
+          <coneGeometry args={[0.32, 0.2, 10]} />
+          <meshPhysicalMaterial color="#2a2a2a" roughness={0.65} metalness={0.5} />
+        </mesh>
+      </group>
+      {/* Graffiti panels */}
+      {Array.from({ length: Math.floor(height / 2.2) }, (_, i) => {
+        const y = 0.8 + i * 2.2;
+        if (y > height * 0.75) return null;
+        const colors = ['#FF1493', '#FFD700', '#00FF7F', '#FF4500'];
+        const color = colors[Math.floor(seededRandom(seed + i * 23) * colors.length)];
+        return (
+          <mesh key={`g-${i}`} position={[(seededRandom(seed + i) - 0.5) * width * 0.6, y, depth * 0.51]}>
+            <planeGeometry args={[seededRange(seed + i * 7, 0.25, 0.65), seededRange(seed + i * 13, 0.3, 0.7)]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.3} transparent opacity={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+      {/* Windows */}
+      {Array.from({ length: Math.floor(height / 1.8) }, (_, i) => {
+        const y = 0.8 + i * 1.8;
+        if (y > height * 0.75) return null;
+        return (
+          <mesh key={`win-${i}`} position={[-(width * 0.3), y, depth * 0.52]}>
+            <planeGeometry args={[0.25, 0.3]} />
+            <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 5, 0.2, 1.6)} transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Penthouse Variant 2: Billboard Building (Hip-Hop) ── */
+function BillboardBuilding({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const billboardRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (billboardRef.current) {
+      (billboardRef.current.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.6 + Math.sin(state.clock.elapsedTime * 1.8 + seed) * 0.5;
+    }
+  });
+  return (
+    <group>
+      {/* Main box */}
+      <mesh position={[0, height * 0.45, 0]}>
+        <boxGeometry args={[width, height * 0.9, depth]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.5} metalness={0.4} emissive={primaryColor} emissiveIntensity={0.08} />
+      </mesh>
+      {/* Billboard frame posts */}
+      {[-width * 0.3, width * 0.3].map((x, i) => (
+        <mesh key={`post-${i}`} position={[x, height + 0.7, 0]}>
+          <boxGeometry args={[0.06, 1.4, 0.06]} />
+          <meshPhysicalMaterial color="#555" roughness={0.4} metalness={0.8} />
+        </mesh>
+      ))}
+      {/* Billboard panel */}
+      <mesh ref={billboardRef} position={[0, height + 1.3, 0]}>
+        <boxGeometry args={[width * 0.75, 0.55, 0.05]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} />
+      </mesh>
+      {/* Graffiti panels */}
+      {Array.from({ length: Math.floor(height / 2) }, (_, i) => {
+        const y = 0.7 + i * 2;
+        if (y > height * 0.85) return null;
+        const colors = ['#FF1493', '#FFD700', '#00FF7F', '#7B68EE'];
+        const color = colors[Math.floor(seededRandom(seed + i * 41) * colors.length)];
+        const side = seededRandom(seed + i * 67) > 0.5 ? 1 : -1;
+        return (
+          <mesh key={`gr-${i}`} position={[side * width * 0.51, y, seededRange(seed + i, -depth * 0.3, depth * 0.3)]}>
+            <planeGeometry args={[seededRange(seed + i * 11, 0.2, 0.6), seededRange(seed + i * 17, 0.3, 0.65)]} />
+            <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.25} transparent opacity={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+      {/* Windows */}
+      {Array.from({ length: Math.floor(height / 1.5) }, (_, i) => {
+        const y = 0.8 + i * 1.5;
+        if (y > height * 0.85) return null;
+        return (
+          <mesh key={`win-${i}`} position={[0, y, depth * 0.52]}>
+            <planeGeometry args={[0.22, 0.3]} />
+            <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 3, 0.2, 1.8)} transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Skyscraper Variant 1: Bubbly Dome (Pop) ── */
+function BubblyDome({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Cylinder base */}
+      <mesh position={[0, height * 0.45, 0]}>
+        <cylinderGeometry args={[width * 0.48, width * 0.52, height * 0.9, 10]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.1} metalness={0.6} emissive={primaryColor} emissiveIntensity={0.12} transparent opacity={0.92} />
+      </mesh>
+      {/* Central dome sphere */}
+      <mesh position={[0, height + 0.3, 0]}>
+        <sphereGeometry args={[width * 0.42, 8, 6]} />
+        <meshPhysicalMaterial color={accentColor} roughness={0.05} metalness={0.5} emissive={accentColor} emissiveIntensity={0.25} transparent opacity={0.88} />
+      </mesh>
+      {/* Clustered small spheres */}
+      {[0, 1, 2, 3, 4].map((i) => {
+        const angle = (i / 5) * Math.PI * 2;
+        const r = width * 0.35;
+        return (
+          <mesh key={`bubble-${i}`} position={[Math.cos(angle) * r, height + 0.25 + seededRange(seed + i * 19, 0, 0.3), Math.sin(angle) * r]}>
+            <sphereGeometry args={[seededRange(seed + i * 37, 0.1, 0.22), 6, 5]} />
+            <meshPhysicalMaterial color={i % 2 === 0 ? secondaryColor : accentColor} roughness={0.05} metalness={0.4} emissive={accentColor} emissiveIntensity={0.3} transparent opacity={0.85} />
+          </mesh>
+        );
+      })}
+      {/* Windows on cylinder */}
+      {Array.from({ length: Math.floor(height / 1.8) }, (_, i) => {
+        const y = 0.5 + i * 1.8;
+        if (y > height - 0.5) return null;
+        const angle = (i * 0.8) + seed;
+        return (
+          <mesh key={`win-${i}`} position={[Math.cos(angle) * width * 0.5, y, Math.sin(angle) * width * 0.5]} rotation={[0, -angle + Math.PI / 2, 0]}>
+            <planeGeometry args={[0.22, 0.3]} />
+            <meshStandardMaterial color="#ffffff" emissive={primaryColor} emissiveIntensity={seededRange(seed + i * 11, 0.3, 2.0)} transparent opacity={0.9} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Skyscraper Variant 2: Neon Marquee (Pop) ── */
+function NeonMarquee({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (ringRef.current) {
+      ringRef.current.rotation.y = state.clock.elapsedTime * 0.5;
+    }
+  });
+  const segments = Math.max(4, Math.floor(height / 2));
+  return (
+    <group>
+      {/* Main box building */}
+      {Array.from({ length: segments }, (_, i) => {
+        const t = i / segments;
+        const segH = height / segments;
+        const colors = [primaryColor, accentColor, secondaryColor];
+        return (
+          <mesh key={`seg-${i}`} position={[0, segH * (i + 0.5), 0]}>
+            <boxGeometry args={[width * (1 - t * 0.12), segH - 0.04, depth * (1 - t * 0.12)]} />
+            <meshPhysicalMaterial color={colors[i % 3]} roughness={0.08} metalness={0.7} emissive={colors[i % 3]} emissiveIntensity={0.15 + t * 0.2} transparent opacity={0.92} />
+          </mesh>
+        );
+      })}
+      {/* Rotating ring around middle */}
+      <mesh ref={ringRef} position={[0, height * 0.5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[Math.max(width, depth) * 0.72, 0.07, 4, 14]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={1.5} />
+      </mesh>
+      {/* Antenna */}
+      <mesh position={[0, height + 1.2, 0]}>
+        <cylinderGeometry args={[0.03, 0.05, 2.4, 5]} />
+        <meshStandardMaterial color="#cccccc" metalness={0.9} roughness={0.1} />
+      </mesh>
+      {/* Windows */}
+      {Array.from({ length: Math.floor(height / 1.8) }, (_, i) => {
+        const y = 0.5 + i * 1.8;
+        if (y > height - 0.5) return null;
+        const cols = Math.max(2, Math.floor(width / 0.5));
+        return (
+          <group key={`row-${i}`}>
+            {Array.from({ length: cols }, (_, c) => {
+              const x = -width * 0.38 + c * (width * 0.76 / Math.max(1, cols - 1));
+              return (
+                <mesh key={`w-${c}`} position={[x, y, depth * 0.51]}>
+                  <planeGeometry args={[0.2, 0.28]} />
+                  <meshStandardMaterial color="#ffffff" emissive={primaryColor} emissiveIntensity={seededRange(seed + i * 7 + c * 13, 0.2, 2.0)} transparent opacity={0.85} side={THREE.DoubleSide} />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Brownstone Variant 1: Bookshop Row (Indie) ── */
+function BookshopRow({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  const shopCount = 3;
+  const shopColors = [primaryColor, secondaryColor, accentColor];
+  return (
+    <group>
+      {Array.from({ length: shopCount }, (_, i) => {
+        const t = i / shopCount;
+        const shopW = width / shopCount;
+        const shopH = height * (0.75 + seededRandom(seed + i * 17) * 0.35);
+        const x = -width * 0.33 + i * (width / shopCount) + shopW * 0.5 - width / 2 + shopW / 2;
+        return (
+          <group key={`shop-${i}`} position={[x, 0, 0]}>
+            {/* Shop body */}
+            <mesh position={[0, shopH * 0.5, 0]}>
+              <boxGeometry args={[shopW * 0.92, shopH, depth]} />
+              <meshPhysicalMaterial color={shopColors[i]} roughness={0.7} metalness={0.2} emissive={shopColors[i]} emissiveIntensity={0.05} />
+            </mesh>
+            {/* Pitched mini roof */}
+            <mesh position={[0, shopH + 0.2, 0]}>
+              <coneGeometry args={[shopW * 0.56, 0.5, 4]} />
+              <meshPhysicalMaterial color={i % 2 === 0 ? secondaryColor : primaryColor} roughness={0.85} metalness={0.1} />
+            </mesh>
+            {/* Shop window */}
+            <mesh position={[0, shopH * 0.3, depth * 0.51]}>
+              <planeGeometry args={[shopW * 0.65, shopH * 0.32]} />
+              <meshStandardMaterial color="#FFF8DC" emissive="#FFD700" emissiveIntensity={seededRange(seed + i * 29, 0.3, 1.3)} transparent opacity={0.88} side={THREE.DoubleSide} />
+            </mesh>
+            {/* Sign above window */}
+            <mesh position={[0, shopH * 0.52, depth * 0.52]}>
+              <planeGeometry args={[shopW * 0.6, shopH * 0.06]} />
+              <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.5} transparent opacity={0.9} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Brownstone Variant 2: Greenhouse Rooftop (Indie) ── */
+function GreenhouseRooftop({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Main brownstone body */}
+      <mesh position={[0, height * 0.5, 0]}>
+        <boxGeometry args={[width, height, depth]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.7} metalness={0.2} emissive={primaryColor} emissiveIntensity={0.05} />
+      </mesh>
+      {/* Greenhouse box on rooftop */}
+      <mesh position={[0, height + 0.45, 0]}>
+        <boxGeometry args={[width * 0.7, 0.9, depth * 0.65]} />
+        <meshPhysicalMaterial color="#88ffaa" roughness={0.05} metalness={0.1} transmission={0.7} transparent opacity={0.45} emissive="#33ff77" emissiveIntensity={0.15} />
+      </mesh>
+      {/* Greenhouse frame */}
+      {[-1, 1].map((s) => (
+        <mesh key={`frame-${s}`} position={[s * width * 0.35, height + 0.45, 0]}>
+          <boxGeometry args={[0.04, 0.9, depth * 0.65]} />
+          <meshStandardMaterial color="#448844" roughness={0.5} metalness={0.4} />
+        </mesh>
+      ))}
+      {/* Balconies */}
+      {Array.from({ length: Math.min(3, Math.floor(height / 3)) }, (_, i) => {
+        const y = 2 + i * 3;
+        if (y > height - 1) return null;
+        return (
+          <mesh key={`bal-${i}`} position={[0, y, depth * 0.62]}>
+            <boxGeometry args={[width * 0.5, 0.06, 0.4]} />
+            <meshPhysicalMaterial color="#555" roughness={0.5} metalness={0.6} />
+          </mesh>
+        );
+      })}
+      {/* Warm windows */}
+      {Array.from({ length: Math.floor(height / 2.5) }, (_, i) => {
+        const y = 0.8 + i * 2.5;
+        if (y > height - 0.5) return null;
+        return (
+          <group key={`win-${i}`}>
+            {[-1, 1].map((side) => (
+              <mesh key={`w-${side}`} position={[side * width * 0.51, y, 0]}>
+                <planeGeometry args={[0.28, 0.38]} />
+                <meshStandardMaterial color="#FFF8DC" emissive="#FFD700" emissiveIntensity={seededRange(seed + i * side * 5, 0.3, 1.5)} transparent opacity={0.9} side={THREE.DoubleSide} />
+              </mesh>
+            ))}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Modern Variant 1: Cylinder Tower (Default) ── */
+function ModernVariantA({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Main cylinder */}
+      <mesh position={[0, height * 0.5, 0]}>
+        <cylinderGeometry args={[width * 0.45, width * 0.5, height, 10]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.15} metalness={0.65} emissive={primaryColor} emissiveIntensity={0.1} />
+      </mesh>
+      {/* Cantilevered cap */}
+      <mesh position={[width * 0.08, height - 0.4, 0]}>
+        <cylinderGeometry args={[width * 0.56, width * 0.52, 0.8, 10]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.1} metalness={0.75} emissive={accentColor} emissiveIntensity={0.18} />
+      </mesh>
+      {/* Accent stripe */}
+      <mesh position={[0, height * 0.5, width * 0.46]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[0.07, height * 0.85]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.9} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Windows */}
+      {Array.from({ length: Math.floor(height / 2.0) }, (_, i) => {
+        const y = 0.6 + i * 2.0;
+        if (y > height - 1) return null;
+        const angle = (i * 1.2) + seed;
+        return (
+          <mesh key={`win-${i}`} position={[Math.cos(angle) * width * 0.47, y, Math.sin(angle) * width * 0.47]} rotation={[0, -angle + Math.PI / 2, 0]}>
+            <planeGeometry args={[0.2, 0.28]} />
+            <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 7, 0.2, 1.8)} transparent opacity={0.85} side={THREE.DoubleSide} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ── Modern Variant 2: L-Shaped Building (Default) ── */
+function ModernVariantB({ height, width, depth, primaryColor, secondaryColor, accentColor, seed }: {
+  height: number; width: number; depth: number; primaryColor: string; secondaryColor: string; accentColor: string; seed: number;
+}) {
+  return (
+    <group>
+      {/* Main wing */}
+      <mesh position={[0, height * 0.5, 0]}>
+        <boxGeometry args={[width, height, depth * 0.6]} />
+        <meshPhysicalMaterial color={primaryColor} roughness={0.15} metalness={0.6} emissive={primaryColor} emissiveIntensity={0.1} />
+      </mesh>
+      {/* L-arm wing */}
+      <mesh position={[width * 0.35, height * 0.35, depth * 0.45]}>
+        <boxGeometry args={[width * 0.4, height * 0.7, depth * 0.55]} />
+        <meshPhysicalMaterial color={secondaryColor} roughness={0.12} metalness={0.65} emissive={accentColor} emissiveIntensity={0.12} />
+      </mesh>
+      {/* Connecting bridge slab */}
+      <mesh position={[width * 0.35, height * 0.72, depth * 0.15]}>
+        <boxGeometry args={[width * 0.42, 0.18, depth * 0.35]} />
+        <meshPhysicalMaterial color={accentColor} roughness={0.1} metalness={0.75} emissive={accentColor} emissiveIntensity={0.2} />
+      </mesh>
+      {/* Accent stripe on main */}
+      <mesh position={[0, height * 0.5, depth * 0.31]}>
+        <planeGeometry args={[0.07, height * 0.85]} />
+        <meshStandardMaterial color={accentColor} emissive={accentColor} emissiveIntensity={0.8} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Window grid on main wing */}
+      {Array.from({ length: Math.floor(height / 2.0) }, (_, i) => {
+        const y = 0.6 + i * 2.0;
+        if (y > height - 1) return null;
+        const cols = Math.max(2, Math.floor(width / 0.5));
+        return (
+          <group key={`row-${i}`}>
+            {Array.from({ length: cols }, (_, c) => {
+              const x = -width * 0.38 + c * (width * 0.76 / Math.max(1, cols - 1));
+              return (
+                <mesh key={`w-${c}`} position={[x, y, depth * 0.31]}>
+                  <planeGeometry args={[0.2, 0.3]} />
+                  <meshStandardMaterial color="#ffffff" emissive={accentColor} emissiveIntensity={seededRange(seed + i * 7 + c * 11, 0.2, 1.8)} transparent opacity={0.85} side={THREE.DoubleSide} />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 /* ── Main Building Component ── */
 export default function Building({ params, onClick }: BuildingProps) {
   const groupRef = useRef<THREE.Group>(null);
@@ -1025,27 +1703,42 @@ export default function Building({ params, onClick }: BuildingProps) {
 
   const buildingComponent = useMemo(() => {
     const props = { height, width, depth, primaryColor: effectivePrimary, secondaryColor, accentColor: effectiveAccent, seed };
+    const v = params.variant ?? 0;
     switch (style) {
       case 'cathedral':
-        // Check if it's jazz (art deco) vs classical (gothic) by checking genres
+        if (v === 1) return <DomeConservatory {...props} />;
+        if (v === 2) return <BellTower {...props} />;
+        // variant 0: jazz → art deco, classical → gothic
         if (profile.topGenres.some(g => g.toLowerCase().includes('jazz') || g.toLowerCase().includes('blues'))) {
           return <ArtDecoBuilding {...props} />;
         }
         return <GothicCathedral {...props} />;
       case 'neon-tower':
+        if (v === 1) return <CrystallineShard {...props} />;
+        if (v === 2) return <FloatingPlatform {...props} />;
         return <FuturisticTower {...props} />;
       case 'fortress':
+        if (v === 1) return <BrutalistBunker {...props} />;
+        if (v === 2) return <SmokestackFactory {...props} />;
         return <IndustrialFortress {...props} />;
       case 'penthouse':
+        if (v === 1) return <WaterTowerBuilding {...props} />;
+        if (v === 2) return <BillboardBuilding {...props} />;
         return <GraffitiTower {...props} />;
       case 'skyscraper':
+        if (v === 1) return <BubblyDome {...props} />;
+        if (v === 2) return <NeonMarquee {...props} />;
         return <PopTower {...props} />;
       case 'brownstone':
+        if (v === 1) return <BookshopRow {...props} />;
+        if (v === 2) return <GreenhouseRooftop {...props} />;
         return <BrownstoneBuild {...props} />;
       default:
+        if (v === 1) return <ModernVariantA {...props} />;
+        if (v === 2) return <ModernVariantB {...props} />;
         return <ModernBuilding {...props} />;
     }
-  }, [height, width, depth, effectivePrimary, secondaryColor, effectiveAccent, seed, style, profile.topGenres]);
+  }, [height, width, depth, effectivePrimary, secondaryColor, effectiveAccent, seed, style, profile.topGenres, params.variant]);
 
   return (
     <group

@@ -65,9 +65,13 @@
 **Decision:** Dark glass modal triggered by '?' key. Grouped shortcuts: Movement, Camera, Time of Day, Interface. '?' button in control panel (hidden on mobile). Styled to match existing UI with Spotify green headers.
 **Result:** Shipped. Discoverable shortcuts, clean design, keyboard and button trigger.
 
+## Decision #14 - Screenshot Mode (Mar 20, 2026)
+**Problem:** No way to capture clean city shots without UI clutter.
+**Decision:** Camera button hides all UI, shows minimal capture toolbar. WebGL canvas grabbed as PNG with white flash feedback. Escape to exit. preserveDrawingBuffer enabled.
+**Result:** Shipped. Users can frame their shot with full camera control, capture high-res PNG, download instantly.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
 2. More building variety - more genre-specific architecture
-3. Screenshot mode (hide UI, high-res capture)

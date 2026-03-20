@@ -168,6 +168,10 @@ export function generateBuildingParams(
   const x = district.center[0] + Math.cos(angle) * spread;
   const z = district.center[1] + Math.sin(angle) * spread;
 
+  // Hash artist name to pick variant 0-2
+  const nameHash = profile.displayName.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+  const variant = nameHash % 3;
+
   return {
     height,
     width,
@@ -179,6 +183,7 @@ export function generateBuildingParams(
     style,
     position: [x, 0, z],
     profile,
+    variant,
   };
 }
 
