@@ -357,7 +357,10 @@ export default function Home() {
     localStorage.setItem('spotify-city-tutorial-seen', '1');
   }, []);
 
-  const isMobile = typeof window !== 'undefined' && /Mobi|Android/i.test(navigator.userAgent);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
+  }, []);
   const onboardingTips = [
     'Click any building to see the artist',
     isMobile ? 'Touch and drag to explore' : 'Use WASD or drag to explore',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { SpotifyProfile } from '@/types';
 
 interface ShareCardProps {
@@ -340,6 +340,13 @@ export default function ShareCard({ profile, onClose }: ShareCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 640);
+    setCanShare('share' in navigator);
+  }, []);
 
   const captureCard = async () => {
     const { default: html2canvas } = await import('html2canvas-pro');
@@ -417,13 +424,14 @@ export default function ShareCard({ profile, onClose }: ShareCardProps) {
         {/* Card preview - scaled to fit viewport */}
         <div className="rounded-2xl overflow-hidden" style={{
           maxWidth: '92vw',
-          maxHeight: '60vh',
+          width: 540 * (isMobile ? 0.38 : 0.5),
+          height: 960 * (isMobile ? 0.38 : 0.5),
           overflow: 'hidden',
           boxShadow: '0 0 60px rgba(29,185,84,0.15), 0 0 120px rgba(29,185,84,0.05)',
         }}>
-          <div className="origin-top-center" style={{
-            transform: typeof window !== 'undefined' && window.innerWidth < 640 ? 'scale(0.38)' : 'scale(0.5)',
-            transformOrigin: 'top center',
+          <div style={{
+            transform: isMobile ? 'scale(0.38)' : 'scale(0.5)',
+            transformOrigin: 'top left',
             width: 540,
             height: 960,
           }}>
@@ -448,7 +456,7 @@ export default function ShareCard({ profile, onClose }: ShareCardProps) {
           >
             {copied ? '✓ Copied!' : '⎘ Copy'}
           </button>
-          {typeof window !== 'undefined' && 'share' in navigator && (
+          {canShare && (
             <button
               onClick={handleShare}
               className="rounded-xl bg-white/10 border border-white/10 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition-all hover:bg-white/15 hover:scale-105 active:scale-95"

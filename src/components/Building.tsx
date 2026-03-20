@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -1613,7 +1613,7 @@ function ModernVariantB({ height, width, depth, primaryColor, secondaryColor, ac
 }
 
 /* ── Main Building Component ── */
-export default function Building({ params, onClick }: BuildingProps) {
+function Building({ params, onClick }: BuildingProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const { height, width, depth, primaryColor, secondaryColor, accentColor, windowGlow, style, position, profile, isCurrentUser, dimmed, highlighted } = params;
@@ -1806,3 +1806,5 @@ export default function Building({ params, onClick }: BuildingProps) {
     </group>
   );
 }
+
+export default memo(Building);
