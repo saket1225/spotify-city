@@ -362,7 +362,8 @@ export default function Home() {
       {selectedBuilding && (
         <ProfileCard
           profile={selectedBuilding.profile}
-          buildingColor={selectedBuilding.primaryColor}
+          building={selectedBuilding}
+          allBuildings={allBuildings}
           onClose={() => setSelectedBuilding(null)}
           onShare={handleShareFromProfile}
         />
