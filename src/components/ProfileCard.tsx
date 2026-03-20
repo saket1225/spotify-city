@@ -64,7 +64,6 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
     requestAnimationFrame(() => setVisible(true));
   }, []);
 
-  // Smooth content swap without close/reopen
   useEffect(() => {
     setContentKey(profile.id);
   }, [profile.id]);
@@ -74,16 +73,13 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
     setTimeout(onClose, 350);
   };
 
-  // Skyline rank: sort buildings by height descending, find this building's rank
   const sortedHeights = allBuildings
     .map((b) => b.height)
     .sort((a, b) => b - a);
   const rank = sortedHeights.indexOf(building.height) + 1;
   const totalBuildings = allBuildings.length;
 
-  // Top 5 buildings for mini bar chart
-  const top5 = sortedHeights.slice(0, 5);
-  const maxH = top5[0] || 1;
+  const hours = profile.estimatedListeningHours.toLocaleString();
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-stretch justify-end" onClick={handleClose}>
@@ -91,9 +87,9 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
       <div
         className="absolute inset-0 transition-opacity duration-350"
         style={{
-          background: 'rgba(0,0,0,0.4)',
-          backdropFilter: 'blur(4px)',
-          WebkitBackdropFilter: 'blur(4px)',
+          background: 'rgba(0,0,0,0.35)',
+          backdropFilter: 'blur(6px)',
+          WebkitBackdropFilter: 'blur(6px)',
           opacity: visible ? 1 : 0,
         }}
       />
@@ -101,43 +97,43 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
       {/* Panel */}
       <div
         ref={panelRef}
-        className="relative w-full sm:w-[400px] max-h-[70vh] sm:max-h-full overflow-y-auto rounded-t-2xl sm:rounded-t-none sm:rounded-l-2xl"
+        className="relative w-full sm:w-[380px] max-h-[75vh] sm:max-h-full overflow-y-auto rounded-t-3xl sm:rounded-t-none sm:rounded-l-3xl"
         style={{
-          background: 'rgba(10, 10, 18, 0.88)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderLeft: `1px solid ${accent}25`,
-          borderTop: `1px solid ${accent}25`,
-          boxShadow: `inset 0 0 80px ${accent}06, -8px 0 40px rgba(0,0,0,0.5), 0 0 60px ${accent}08`,
+          background: 'rgba(8, 8, 14, 0.92)',
+          backdropFilter: 'blur(32px)',
+          WebkitBackdropFilter: 'blur(32px)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRight: 'none',
+          boxShadow: `-12px 0 48px rgba(0,0,0,0.6), inset 0 0 60px ${accent}04`,
           transform: visible
             ? 'translateX(0) translateY(0)'
             : typeof window !== 'undefined' && window.innerWidth < 768
               ? 'translateX(0) translateY(100%)'
               : 'translateX(100%) translateY(0)',
           opacity: visible ? 1 : 0,
-          transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out',
+          transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease-out',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile drag handle */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div className="w-10 h-1 rounded-full bg-white/15" />
         </div>
 
-        {/* Accent glow line at top */}
+        {/* Accent glow line */}
         <div
           className="h-[2px] w-full"
           style={{
             background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
-            boxShadow: `0 0 12px ${accent}60`,
+            boxShadow: `0 2px 16px ${accent}50`,
           }}
         />
 
-        <div className="p-6" key={contentKey}>
+        <div className="p-6 pt-5" key={contentKey}>
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute right-4 top-5 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 transition-all hover:bg-white/10 hover:text-white"
+            className="absolute right-4 top-5 flex h-8 w-8 items-center justify-center rounded-full text-white/30 transition-all hover:bg-white/8 hover:text-white/70"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <line x1="1" y1="1" x2="13" y2="13" />
@@ -145,18 +141,55 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
             </svg>
           </button>
 
-          {/* Artist name */}
-          <h2 className="text-[26px] font-bold text-white tracking-tight leading-tight pr-10">
-            {profile.displayName}
-          </h2>
-
           {/* Building style label */}
-          <p className="text-[13px] mt-1 tracking-wide" style={{ color: `${accent}cc` }}>
+          <p
+            className="text-[11px] uppercase tracking-[0.15em] font-medium mb-1.5"
+            style={{ color: `${accent}99` }}
+          >
             {STYLE_LABELS[building.style] || 'Modern Tower'}
           </p>
 
+          {/* Artist name */}
+          <h2 className="text-[28px] font-bold text-white tracking-tight leading-tight pr-10 mb-6">
+            {profile.displayName}
+          </h2>
+
+          {/* Hero stat - Listening Hours */}
+          <div className="mb-6">
+            <div
+              className="text-[56px] font-bold leading-none tracking-tight text-white"
+              style={{ textShadow: `0 0 40px ${accent}20` }}
+            >
+              {hours}<span className="text-[24px] font-medium text-white/40 ml-1">h</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[13px] text-white/40">listening hours</span>
+              <span className="text-[13px] font-semibold" style={{ color: accent }}>
+                #{rank} <span className="text-white/30 font-normal">in your city</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Rank bar */}
+          <div className="mb-6">
+            <div className="h-1 w-full rounded-full bg-white/[0.04] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${Math.max(5, ((totalBuildings - rank + 1) / totalBuildings) * 100)}%`,
+                  background: `linear-gradient(90deg, ${accent}, ${accent}80)`,
+                  boxShadow: `0 0 8px ${accent}40`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-[10px] text-white/20">#{totalBuildings}</span>
+              <span className="text-[10px] text-white/20">#1</span>
+            </div>
+          </div>
+
           {/* Genre pills */}
-          <div className="flex flex-wrap gap-1.5 mt-4 mb-6">
+          <div className="flex flex-wrap gap-1.5 mb-8">
             {profile.topGenres.slice(0, 5).map((genre) => {
               const c = getGenreColor(genre);
               return (
@@ -164,9 +197,9 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
                   key={genre}
                   className="rounded-full px-2.5 py-[3px] text-[10px] font-medium tracking-wide"
                   style={{
-                    backgroundColor: `${c}12`,
-                    color: `${c}dd`,
-                    border: `1px solid ${c}25`,
+                    backgroundColor: `${c}0a`,
+                    color: `${c}bb`,
+                    border: `1px solid ${c}18`,
                   }}
                 >
                   {genre}
@@ -175,154 +208,21 @@ export default function ProfileCard({ profile, building, allBuildings, onClose, 
             })}
           </div>
 
-          {/* Stats grid */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <StatBox
-              value={profile.estimatedListeningHours.toLocaleString()}
-              label="Hours Listened"
-              accent={accent}
-            />
-            <StatBox
-              value={profile.topTracks.length.toString()}
-              label="Top Tracks"
-              accent={accent}
-            />
-            <StatBox
-              value={profile.totalPlaylists.toString()}
-              label="Playlists"
-              accent={accent}
-            />
-            <StatBox
-              value={`${profile.listeningStreak}d`}
-              label="Streak"
-              accent={accent}
-            />
-          </div>
-
-          {/* Skyline Rank */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                Skyline Rank
-              </h3>
-              <span className="text-[11px] text-gray-500">
-                #{rank} of {totalBuildings}
-              </span>
-            </div>
-
-            {/* Mini bar chart */}
-            <div className="flex items-end gap-[3px] h-[48px]">
-              {allBuildings
-                .slice()
-                .sort((a, b) => b.height - a.height)
-                .slice(0, 20)
-                .map((b, i) => {
-                  const isThis = b.profile.id === profile.id;
-                  const barH = (b.height / maxH) * 100;
-                  return (
-                    <div
-                      key={i}
-                      className="flex-1 rounded-t-[2px] transition-all duration-300"
-                      style={{
-                        height: `${barH}%`,
-                        background: isThis ? accent : 'rgba(255,255,255,0.08)',
-                        boxShadow: isThis ? `0 0 8px ${accent}40` : 'none',
-                        minWidth: 0,
-                      }}
-                    />
-                  );
-                })}
-            </div>
-          </div>
-
-          {/* Color palette */}
-          <div className="mb-6">
-            <h3 className="text-[11px] font-semibold uppercase tracking-widest text-gray-500 mb-3">
-              Building Palette
-            </h3>
-            <div className="flex gap-2">
-              {[building.primaryColor, building.secondaryColor, building.accentColor].map(
-                (color, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div
-                      className="h-6 w-6 rounded-md"
-                      style={{
-                        background: color,
-                        boxShadow: `0 0 8px ${color}30`,
-                        border: '1px solid rgba(255,255,255,0.08)',
-                      }}
-                    />
-                    <span className="text-[10px] text-gray-500 font-mono">
-                      {color.toUpperCase()}
-                    </span>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-
-          {/* Top Tracks */}
-          {profile.topTracks.length > 0 && (
-            <div className="mb-6">
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-widest text-gray-500">
-                Top Tracks
-              </h3>
-              <div className="space-y-2">
-                {profile.topTracks.slice(0, 3).map((track, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm">
-                    <span
-                      className="flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold shrink-0"
-                      style={{ background: `${accent}12`, color: accent }}
-                    >
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0 truncate">
-                      <span className="text-gray-200">{track.name}</span>
-                      <span className="text-gray-500"> — {track.artist}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Share button */}
           {onShare && (
             <button
               onClick={onShare}
-              className="w-full rounded-xl px-4 py-3 text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full rounded-2xl px-4 py-3.5 text-[13px] font-semibold tracking-wide transition-all hover:scale-[1.02] active:scale-[0.98]"
               style={{
-                background: accent,
-                color: '#000',
-                boxShadow: `0 0 20px ${accent}25`,
+                background: `${accent}18`,
+                color: accent,
+                border: `1px solid ${accent}25`,
               }}
             >
-              Share This Building
+              Share
             </button>
           )}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatBox({ value, label, accent }: { value: string; label: string; accent: string }) {
-  return (
-    <div
-      className="rounded-xl p-3"
-      style={{
-        background: 'rgba(255,255,255,0.03)',
-        border: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      <div
-        className="text-xl font-bold text-white"
-        style={{ textShadow: `0 0 20px ${accent}20` }}
-      >
-        {value}
-      </div>
-      <div className="text-[10px] uppercase tracking-widest text-gray-500 mt-0.5">
-        {label}
       </div>
     </div>
   );

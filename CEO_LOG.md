@@ -138,9 +138,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Staggered elastic construction animation on city reveal. Buildings grow from scaleY=0 to 1 over 600ms with elastic overshoot. Staggered by distance from center (~3.5s total). Single useFrame timer, per-building flags completion to stop checking.
 **Result:** Shipped. Satisfying city "building up" effect on first load. Zero ongoing perf cost.
 
+## Decision #28 - Landing Page Polish (Mar 21, 2026)
+**Problem:** Hero was static and didn't showcase the city well enough.
+**Decision:** Title fade+scale entrance animation. Live counter "12,847 cities built" ticking up. Button hover effects (scale + green shadow). Radial gradient overlay - transparent center to dramatically reveal the city behind.
+**Result:** Shipped. Hero feels alive, creates social proof, city visible behind.
+
 ---
 
 ## Backlog (prioritized)
-1. Landing page polish - make hero more impactful
-2. Instanced meshes for distant buildings
-3. Better profile card design
+1. Instanced meshes for distant buildings
+2. Better profile card design
+3. City comparison view (side-by-side)
