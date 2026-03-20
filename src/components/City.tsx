@@ -10,6 +10,7 @@ import ExploreCamera from './CityCamera';
 import Minimap from './Minimap';
 import VirtualJoystick from './VirtualJoystick';
 import { BuildingParams } from '@/types';
+import { useAmbientSound, SpeakerButton } from './AmbientSound';
 
 function detectWebGL(): boolean {
   try {
@@ -975,6 +976,7 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
+  const { muted: soundMuted, toggle: toggleSound } = useAmbientSound(time);
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
   const [flyTarget, setFlyTarget] = useState<[number, number, number] | null>(null);
   const [camPos, setCamPos] = useState<[number, number, number]>([30, 16, 30]);
@@ -1087,6 +1089,12 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             {icon}
           </button>
         ))}
+
+        {/* Divider */}
+        <div className="h-px mx-1 bg-white/10" />
+
+        {/* Sound toggle */}
+        <SpeakerButton muted={soundMuted} onToggle={toggleSound} />
       </div>}
 
       {/* Control hints when in explore mode */}
