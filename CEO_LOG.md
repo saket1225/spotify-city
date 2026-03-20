@@ -153,9 +153,14 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Clean dark card (#0a0b0c). SPOTIFY CITY branding top, big user name, massive hours stat, "across X genres · Y artists", monochrome green genre pills, minimal skyline silhouette, subtle URL footer. Removed QR, gradients, noise, stats grid, top artists.
 **Result:** Shipped. Clean, screenshot-worthy card people would actually post.
 
+## Decision #31 - Distance-based LOD (Mar 21, 2026)
+**Problem:** 1200 full-detail buildings with complex geometry even when far from camera.
+**Decision:** Buildings >150 units from camera switch to a simple colored box mesh. Camera position tracked every 10 frames (no re-renders). Close buildings render full detail. Seamless transition.
+**Result:** Shipped. Significant GPU savings for distant buildings.
+
 ---
 
 ## Backlog (prioritized)
-1. Instanced meshes for distant buildings
-2. City comparison view (side-by-side)
-3. Loading/skeleton state improvements
+1. City comparison view (side-by-side)
+2. Loading/skeleton state improvements
+3. Road/path network between districts

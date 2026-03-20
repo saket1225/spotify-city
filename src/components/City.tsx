@@ -583,6 +583,62 @@ function DustParticles() {
 }
 
 /* ── Street Furniture using InstancedMesh ── */
+/* ── Roads connecting genre districts ── */
+const ROAD_CONNECTIONS: [number, number][] = [
+  [0, 1], // Pop -> Rock
+  [0, 2], // Pop -> Hip-hop
+  [0, 3], // Pop -> Electronic
+  [0, 4], // Pop -> Indie
+  [0, 5], // Pop -> Classical
+  [1, 5], // Rock -> Classical
+  [3, 4], // Electronic -> Indie
+];
+
+function Roads() {
+  const segments = useMemo(() => {
+    return ROAD_CONNECTIONS.map(([a, b]) => {
+      const da = GENRE_DISTRICTS[a];
+      const db = GENRE_DISTRICTS[b];
+      const [ax, az] = da.center;
+      const [bx, bz] = db.center;
+      const mx = (ax + bx) / 2;
+      const mz = (az + bz) / 2;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const length = Math.sqrt(dx * dx + dz * dz);
+      const angle = Math.atan2(dx, dz);
+      // Dashed: split into segments with gaps
+      const dashLen = 3;
+      const gapLen = 2;
+      const stride = dashLen + gapLen;
+      const count = Math.floor(length / stride);
+      const dashes: { pos: [number, number, number]; rotY: number; len: number }[] = [];
+      const dirX = dx / length;
+      const dirZ = dz / length;
+      for (let i = 0; i < count; i++) {
+        const t = (i * stride + dashLen / 2) / length;
+        dashes.push({
+          pos: [ax + dirX * (i * stride + dashLen / 2), 0.01, az + dirZ * (i * stride + dashLen / 2)],
+          rotY: angle,
+          len: dashLen,
+        });
+      }
+      return dashes;
+    }).flat();
+  }, []);
+
+  return (
+    <group>
+      {segments.map((d, i) => (
+        <mesh key={`road-${i}`} position={d.pos} rotation={[0, d.rotY, 0]}>
+          <boxGeometry args={[0.5, 0.02, d.len]} />
+          <meshBasicMaterial color="#1DB954" transparent opacity={0.1} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function StreetFurniture({ buildings }: { buildings: BuildingParams[] }) {
   const items = useMemo(() => {
     const lamps: [number, number, number][] = [];
@@ -1434,6 +1490,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         <DustParticles />
         <WeatherParticles time={time} />
         <StreetFurniture buildings={buildings} />
+        <Roads />
 
         <ConstructionTimer revealTime={revealTime ?? null} elapsedRef={constructionElapsedRef} />
         <CameraPositionTracker posRef={cameraPosRef} />
