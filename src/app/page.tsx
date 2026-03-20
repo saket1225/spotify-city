@@ -50,7 +50,7 @@ function StatsBar({ buildings }: { buildings: BuildingParams[] }) {
     return {
       listeners: buildings.length.toLocaleString(),
       hours: totalHours.toLocaleString(),
-      tallestName: tallest?.profile.displayName || tallest?.profile.topArtists?.[0] || 'Unknown',
+      tallestName: tallest?.profile.displayName || tallest?.profile.topArtists?.[0]?.name || 'Unknown',
       tallestHours: (tallest?.profile.estimatedListeningHours || 0).toLocaleString(),
     };
   }, [buildings]);
