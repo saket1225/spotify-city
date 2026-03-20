@@ -1073,6 +1073,27 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls }: CityProps) {
   const [introComplete, setIntroComplete] = useState(false);
   const [time, setTime] = useState<TimeOfDay>('night');
+  const [autoCycle, setAutoCycle] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('spotify-city-autocycle') === 'true';
+    }
+    return false;
+  });
+
+  // Persist auto-cycle state
+  useEffect(() => {
+    localStorage.setItem('spotify-city-autocycle', String(autoCycle));
+  }, [autoCycle]);
+
+  // Auto-cycle interval
+  useEffect(() => {
+    if (!autoCycle) return;
+    const order: TimeOfDay[] = ['night', 'dawn', 'day', 'sunset'];
+    const interval = setInterval(() => {
+      setTime(prev => order[(order.indexOf(prev) + 1) % 4]);
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [autoCycle]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const { muted: soundMuted, toggle: toggleSound } = useAmbientSound(time);
   const [cameraMode, setCameraMode] = useState<CameraMode>('orbit');
@@ -1187,7 +1208,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         ] as const).map(({ key, icon, label }) => (
           <button
             key={key}
-            onClick={() => setTime(key)}
+            onClick={() => { setAutoCycle(false); setTime(key); }}
             title={label}
             className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
             style={{
@@ -1201,6 +1222,25 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             {icon}
           </button>
         ))}
+
+        {/* Auto-cycle toggle */}
+        <button
+          onClick={() => setAutoCycle(c => !c)}
+          title={autoCycle ? 'Stop auto-cycle' : 'Auto-cycle time of day'}
+          className="w-11 h-11 sm:w-9 sm:h-9 rounded-[10px] flex items-center justify-center transition-all duration-200 cursor-pointer"
+          style={{
+            border: autoCycle ? '2px solid rgba(29,185,84,0.8)' : '1px solid rgba(255,255,255,0.1)',
+            background: autoCycle ? 'rgba(29,185,84,0.15)' : 'rgba(8,9,10,0.7)',
+            backdropFilter: 'blur(10px)',
+            color: autoCycle ? '#1DB954' : 'rgba(255,255,255,0.5)',
+            boxShadow: autoCycle ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={autoCycle ? { animation: 'spin 2s linear infinite' } : undefined}>
+            <path d="M21 12a9 9 0 1 1-6.22-8.56" />
+            <path d="M21 3v6h-6" />
+          </svg>
+        </button>
 
         {/* Divider */}
         <div className="h-px mx-1 bg-white/10" />

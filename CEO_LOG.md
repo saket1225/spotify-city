@@ -85,10 +85,16 @@
 **Decision:** 4 procedural Web Audio sounds: building click (pitch mapped to height), panel close (filtered noise whoosh), screenshot (shutter sweep), mode switch (sine tick). Respects mute state. 0.05-0.15 volume.
 **Result:** Shipped. Tactile, premium audio feedback. Zero audio files.
 
+## Decision #18 - Weather Particles (Mar 20, 2026)
+**Problem:** City atmosphere was flat despite time-of-day lighting.
+**Decision:** 70 atmospheric particles that morph with time: night fireflies (golden glow), dawn mist (soft white), day dust motes (bright specks), sunset embers (orange). Additive blending, smooth lerp transitions matching existing system.
+**Result:** Shipped. City feels alive and atmospheric in every time of day.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
 2. City stats dashboard (total buildings, genre breakdown)
-3. Weather effects (rain, snow particles based on mood)
-4. Day/night auto-cycle option
+3. Day/night auto-cycle option
+4. Animated building construction on first load
+5. Genre district grouping (cluster same-genre buildings)
