@@ -213,6 +213,7 @@ export default function Home() {
   const [userProfile, setUserProfile] = useState<SpotifyProfile | null>(null);
   const [focusPosition, setFocusPosition] = useState<[number, number, number] | null>(null);
   const [loadingStats, setLoadingStats] = useState<string | null>(null);
+  const [cityLoading, setCityLoading] = useState(false);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -292,7 +293,14 @@ export default function Home() {
 
       {/* Hero Overlay */}
       {!loading && heroVisible && (
-        <HeroOverlay onExploreDemo={() => setHeroVisible(false)} />
+        <HeroOverlay onExploreDemo={() => { setHeroVisible(false); setCityLoading(true); setTimeout(() => setCityLoading(false), 3000); }} />
+      )}
+
+      {/* City loading indicator */}
+      {cityLoading && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center pointer-events-none animate-pulse">
+          <p className="text-sm text-gray-500 tracking-widest font-light">Loading city...</p>
+        </div>
       )}
 
       {/* Minimal header: title left, avatar right */}

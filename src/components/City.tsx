@@ -10,6 +10,15 @@ import ExploreCamera from './CityCamera';
 import Minimap from './Minimap';
 import { BuildingParams } from '@/types';
 
+function detectWebGL(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(canvas.getContext('webgl2') || canvas.getContext('webgl'));
+  } catch {
+    return false;
+  }
+}
+
 export type TimeOfDay = 'night' | 'dawn' | 'day' | 'sunset';
 export type CameraMode = 'orbit' | 'explore';
 
@@ -939,6 +948,25 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
   const preset = TIME_PRESETS[time];
   const isExplore = cameraMode === 'explore';
 
+  const [webglSupported, setWebglSupported] = useState(true);
+  useEffect(() => { setWebglSupported(detectWebGL()); }, []);
+
+  if (!webglSupported) {
+    return (
+      <div style={{
+        width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#08090a', color: 'rgba(255,255,255,0.6)', fontFamily: 'system-ui', textAlign: 'center',
+        flexDirection: 'column', gap: 12, padding: 32,
+      }}>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5">
+          <path d="M12 9v4m0 4h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+        <p style={{ fontSize: 16, fontWeight: 500 }}>Your browser doesn&apos;t support WebGL.</p>
+        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>Try Chrome or Firefox for the full 3D experience.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Controls UI */}
@@ -974,7 +1002,11 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
             boxShadow: isExplore ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
           }}
         >
-          {isExplore ? '🚶' : '🔄'}
+          {isExplore ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="2"/><path d="m16 21-3-12M8 21l3-12m-1-3-2 3h6l-2-3"/></svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/><path d="m16 8-4 4-4-4"/></svg>
+          )}
         </button>
 
         {/* Divider */}
@@ -982,10 +1014,10 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
 
         {/* Time-of-day toggle */}
         {([
-          { key: 'night', icon: '🌙', label: 'Night' },
-          { key: 'dawn', icon: '🌅', label: 'Dawn' },
-          { key: 'day', icon: '☀️', label: 'Day' },
-          { key: 'sunset', icon: '🌇', label: 'Sunset' },
+          { key: 'night', label: 'Night', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg> },
+          { key: 'dawn', label: 'Dawn', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m-7.07 2.93 2.83 2.83M2 16h4m12 0h4m-4.24-6.24 2.83-2.83M12 16a4 4 0 1 0 0-8"/><path d="M2 20h20"/></svg> },
+          { key: 'day', label: 'Day', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg> },
+          { key: 'sunset', label: 'Sunset', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 10V2m-7.07 8.93 2.83 2.83M2 18h4m12 0h4m-4.24-6.24 2.83-2.83M12 18a4 4 0 1 0 0-8"/><path d="M2 22h20"/></svg> },
         ] as const).map(({ key, icon, label }) => (
           <button
             key={key}
@@ -999,11 +1031,11 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
               background: time === key ? 'rgba(29,185,84,0.15)' : 'rgba(8,9,10,0.7)',
               backdropFilter: 'blur(10px)',
               cursor: 'pointer',
-              fontSize: 16,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.2s',
+              color: time === key ? '#1DB954' : 'rgba(255,255,255,0.5)',
               boxShadow: time === key ? '0 0 12px rgba(29,185,84,0.3)' : 'none',
             }}
           >
