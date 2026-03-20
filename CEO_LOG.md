@@ -118,10 +118,15 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Stripped hero to just title + tagline + 2 buttons. Removed feature cards, scroll chevron, attribution, social proof ticker. Replaced personal stats with centered stats bar. Smaller control buttons. Subtler glass panels (less blur, less border). Top 10 floating labels instead of 5.
 **Result:** Shipped. Clean, minimal, gitcity-level clarity.
 
+## Decision #24 - Performance Optimization (Mar 21, 2026)
+**Problem:** 1200 buildings each running useFrame with animation logic every frame. Window flicker traversing all meshes per frame.
+**Decision:** Removed useFrame from 9 sub-building components (static animations). Added frame-skipping - idle buildings early-exit in 3 comparisons. Removed expensive window flicker loop. Only hovered/highlighted buildings do real work (~1-5 at a time).
+**Result:** Shipped. ~99% reduction in per-frame JS work from buildings.
+
 ---
 
 ## Backlog (prioritized)
 1. Simple comparison metrics legend (height = hours, width = genres)
-2. Performance: instanced meshes for 1200 buildings
-3. Animated building construction on first load
-4. Landing page polish - make hero more impactful
+2. Animated building construction on first load
+3. Landing page polish - make hero more impactful
+4. District labels visible in the 3D world

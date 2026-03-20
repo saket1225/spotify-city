@@ -13,6 +13,7 @@ import { BuildingParams } from '@/types';
 import { useAmbientSound, SpeakerButton } from './AmbientSound';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import { playBuildingClick, playModeSwitch } from '@/lib/uiSounds';
+import { GENRE_DISTRICTS } from '@/lib/buildingGenerator';
 
 function detectWebGL(): boolean {
   try {
@@ -1011,6 +1012,59 @@ function CameraTracker({ onUpdate }: { onUpdate: (pos: [number, number, number],
   return null;
 }
 
+/* ── District name labels + ground rings ── */
+const DISTRICT_COLORS: Record<string, string> = {
+  pop: '#FF69B4',
+  rock: '#FF2244',
+  hiphop: '#FFD700',
+  electronic: '#00FFFF',
+  indie: '#39FF8F',
+  classical: '#AA66FF',
+};
+
+function DistrictLabels({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <group>
+      {GENRE_DISTRICTS.map((d) => (
+        <group key={d.name}>
+          {/* Floating label */}
+          <Html
+            position={[d.center[0], 35, d.center[1]]}
+            center
+            occlude={false}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div style={{
+              fontFamily: 'Silkscreen, monospace',
+              fontSize: '28px',
+              fontWeight: 700,
+              color: 'white',
+              opacity: 0.4,
+              textShadow: '0 0 20px rgba(255,255,255,0.3), 0 0 40px rgba(255,255,255,0.1)',
+              whiteSpace: 'nowrap',
+              letterSpacing: '4px',
+              userSelect: 'none',
+            }}>
+              {d.label}
+            </div>
+          </Html>
+          {/* Ground ring */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[d.center[0], 0.05, d.center[1]]}>
+            <ringGeometry args={[d.radius - 2, d.radius, 64]} />
+            <meshBasicMaterial
+              color={DISTRICT_COLORS[d.name] || '#1DB954'}
+              transparent
+              opacity={0.03}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 /* ── Floating artist labels (orbit mode, top 5 tallest) ── */
 function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; visible: boolean }) {
   const top10 = useMemo(() => {
@@ -1366,6 +1420,7 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
         ))}
 
         <FloatingLabels buildings={buildings} visible={cameraMode === 'orbit' && introComplete} />
+        <DistrictLabels visible={cameraMode === 'orbit' && introComplete} />
 
         {!introComplete && <CinematicIntro onComplete={handleIntroComplete} />}
 
