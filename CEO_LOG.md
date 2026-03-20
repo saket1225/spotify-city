@@ -95,11 +95,15 @@
 **Decision:** Circular arrow toggle below time buttons. Cycles night->dawn->day->sunset every 20s per phase. Spinning animation when active. Manual time click disables it. localStorage persistence.
 **Result:** Shipped. Ambient time cycling for lean-back viewing.
 
+## Decision #20 - City Stats Dashboard (Mar 20, 2026)
+**Problem:** No way to see an overview of your city's composition.
+**Decision:** Bar chart icon opens a glass panel with: city name, total buildings, listening hours, diversity score, tallest building, most popular genre, and a full genre breakdown bar chart with colored bars. Left slide-in on desktop, bottom sheet on mobile.
+**Result:** Shipped. Rich city analytics in a premium panel.
+
 ---
 
 ## Backlog (prioritized)
 1. Leaderboard view - compare cities with friends
-2. City stats dashboard (total buildings, genre breakdown)
-3. Animated building construction on first load
-4. Genre district grouping (cluster same-genre buildings)
-5. Parallax depth on hero landing page
+2. Animated building construction on first load
+3. Genre district grouping (cluster same-genre buildings)
+4. Parallax depth on hero landing page

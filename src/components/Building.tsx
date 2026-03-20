@@ -2,7 +2,7 @@
 
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html, Detailed } from '@react-three/drei';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { BuildingParams, BuildingStyle } from '@/types';
 
@@ -1754,41 +1754,23 @@ export default function Building({ params, onClick }: BuildingProps) {
         <meshBasicMaterial color={effectivePrimary} transparent opacity={isCurrentUser ? 0.12 : 0.08} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
 
-      {/* LOD: Full detail / Medium box / Low box */}
-      <Detailed distances={[0, 30, 60]}>
-        {/* LOD 0: Full detail */}
-        <group>
-          {buildingComponent}
+      {buildingComponent}
 
-          {/* Landmark glow for current user - NO pointLight */}
-          {isCurrentUser && (
-            <mesh position={[0, height + 0.5, 0]}>
-              <sphereGeometry args={[width * 1.0, 6, 6]} />
-              <meshBasicMaterial color="#1DB954" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
-            </mesh>
-          )}
-
-          {/* Glow halo for tall buildings - reduced segments: 16,16 → 6,6 */}
-          {height > 15 && !isCurrentUser && (
-            <mesh position={[0, height + 0.5, 0]}>
-              <sphereGeometry args={[width * 0.8, 6, 6]} />
-              <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
-            </mesh>
-          )}
-        </group>
-
-        {/* LOD 1: Medium detail - simple colored box */}
-        <mesh position={[0, height * 0.5, 0]}>
-          <boxGeometry args={[width, height, depth]} />
-          <meshStandardMaterial color={effectivePrimary} emissive={effectivePrimary} emissiveIntensity={0.15} />
+      {/* Landmark glow for current user - NO pointLight */}
+      {isCurrentUser && (
+        <mesh position={[0, height + 0.5, 0]}>
+          <sphereGeometry args={[width * 1.0, 6, 6]} />
+          <meshBasicMaterial color="#1DB954" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
         </mesh>
+      )}
 
-        {/* LOD 2: Low detail - flat basic box */}
-        <mesh position={[0, height * 0.5, 0]}>
-          <boxGeometry args={[width, height, depth]} />
-          <meshBasicMaterial color={effectivePrimary} />
+      {/* Glow halo for tall buildings */}
+      {height > 15 && !isCurrentUser && (
+        <mesh position={[0, height + 0.5, 0]}>
+          <sphereGeometry args={[width * 0.8, 6, 6]} />
+          <meshBasicMaterial color={effectiveAccent} transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.BackSide} />
         </mesh>
-      </Detailed>
+      )}
 
       {/* Hover wireframe outline */}
       {hovered && (
