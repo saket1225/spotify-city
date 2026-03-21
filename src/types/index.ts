@@ -32,3 +32,13 @@ export interface BuildingParams {
   highlighted?: boolean;
   variant?: number;
 }
+
+export interface CityData {
+  count: number;
+  positions: Float32Array;   // count*3
+  scales: Float32Array;      // count*3 (width,height,depth)
+  colors: Float32Array;      // count*3 (r,g,b 0-1)
+  genreIndices: Uint8Array;  // count (0-5 for 6 genres)
+  names: string[];           // count
+  hours: Float32Array;       // count
+}

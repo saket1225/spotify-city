@@ -9,7 +9,8 @@ import Building from './Building';
 import ExploreCamera from './CityCamera';
 import Minimap from './Minimap';
 import VirtualJoystick from './VirtualJoystick';
-import { BuildingParams } from '@/types';
+import InstancedCity from './InstancedCity';
+import { BuildingParams, CityData } from '@/types';
 import { useAmbientSound, SpeakerButton } from './AmbientSound';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import { playBuildingClick, playModeSwitch } from '@/lib/uiSounds';
@@ -55,6 +56,8 @@ interface CityProps {
   focusPosition?: [number, number, number] | null;
   hideControls?: boolean;
   revealTime?: number | null;
+  cityData?: CityData;
+  onInstancedBuildingClick?: (index: number) => void;
 }
 
 /* ── Time-of-day color presets ── */
@@ -1011,9 +1014,10 @@ function CinematicIntro({ onComplete }: { onComplete: () => void }) {
   return null;
 }
 
-function SmartOrbitControls({ enabled = true, orbitRef }: {
+function SmartOrbitControls({ enabled = true, orbitRef, maxDistance = 300 }: {
   enabled?: boolean;
   orbitRef: React.MutableRefObject<React.ComponentRef<typeof OrbitControls> | null>;
+  maxDistance?: number;
 }) {
   const autoRotateRef = useRef(true);
 
@@ -1032,7 +1036,7 @@ function SmartOrbitControls({ enabled = true, orbitRef }: {
       enableDamping
       dampingFactor={0.05}
       minDistance={8}
-      maxDistance={300}
+      maxDistance={maxDistance}
       maxPolarAngle={Math.PI / 2.05}
       autoRotate
       autoRotateSpeed={0.3}
@@ -1202,7 +1206,8 @@ function FloatingLabels({ buildings, visible }: { buildings: BuildingParams[]; v
 }
 
 /* ── Main City export ── */
-export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls, revealTime }: CityProps) {
+export default function City({ buildings, onBuildingClick, onIntroComplete, focusPosition, hideControls, revealTime, cityData, onInstancedBuildingClick }: CityProps) {
+  const isInstanced = !!cityData;
   const constructionElapsedRef = useRef(0);
   const cameraPosRef = useRef(new THREE.Vector3(30, 16, 30));
   const [introComplete, setIntroComplete] = useState(false);
@@ -1468,56 +1473,72 @@ export default function City({ buildings, onBuildingClick, onIntroComplete, focu
       )}
 
       <Canvas
-        camera={{ position: [80, 50, 80], fov: 50 }}
+        camera={{ position: isInstanced ? [0, 80, 200] : [80, 50, 80], fov: 50 }}
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1, preserveDrawingBuffer: true }}
       >
         <CameraTracker onUpdate={handleCameraUpdate} />
 
         <SkyDome time={time} />
-        <AnimatedFog time={time} />
+        {isInstanced ? (
+          <fog attach="fog" args={['#0a0a1e', 200, 1500]} />
+        ) : (
+          <AnimatedFog time={time} />
+        )}
         <AnimatedLighting time={time} />
         <CelestialBody time={time} />
         <Clouds time={time} />
         <ExposureController time={time} />
 
-        {preset.starsVisible && <Stars radius={120} depth={60} count={1500} factor={5} fade speed={0.3} />}
+        {preset.starsVisible && <Stars radius={isInstanced ? 1500 : 120} depth={60} count={1500} factor={5} fade speed={0.3} />}
         <ShootingStars visible={preset.starsVisible} />
 
-        <AnimatedGround time={time} />
-        <AnimatedGrid buildings={buildings} time={time} />
+        {isInstanced ? (
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
+            <planeGeometry args={[3000, 3000]} />
+            <meshStandardMaterial color="#0a0a12" roughness={0.9} metalness={0.1} />
+          </mesh>
+        ) : (
+          <AnimatedGround time={time} />
+        )}
+        {!isInstanced && <AnimatedGrid buildings={buildings} time={time} />}
         <FloatingParticles time={time} />
-        <DustParticles />
-        <WeatherParticles time={time} />
-        <StreetFurniture buildings={buildings} />
-        <Roads />
+        {!isInstanced && <DustParticles />}
+        {!isInstanced && <WeatherParticles time={time} />}
+        {!isInstanced && <StreetFurniture buildings={buildings} />}
+        {!isInstanced && <Roads />}
 
         <ConstructionTimer revealTime={revealTime ?? null} elapsedRef={constructionElapsedRef} />
         <CameraPositionTracker posRef={cameraPosRef} />
-        {buildings.map((b, i) => {
-          const dist = Math.sqrt(b.position[0] * b.position[0] + b.position[2] * b.position[2]);
-          const maxDist = 120;
-          const delay = (Math.min(dist, maxDist) / maxDist) * 3500;
-          return (
-            <Building
-              key={b.profile.id || i}
-              params={b}
-              onClick={handleBuildingDoubleClick}
-              constructionDelay={delay}
-              constructionElapsedRef={revealTime !== null ? constructionElapsedRef : undefined}
-              cameraPosition={cameraPosRef}
-            />
-          );
-        })}
 
-        <FloatingLabels buildings={buildings} visible={cameraMode === 'orbit' && introComplete} />
-        <DistrictLabels visible={cameraMode === 'orbit' && introComplete} />
+        {isInstanced ? (
+          <InstancedCity cityData={cityData!} onBuildingClick={onInstancedBuildingClick!} />
+        ) : (
+          buildings.map((b, i) => {
+            const dist = Math.sqrt(b.position[0] * b.position[0] + b.position[2] * b.position[2]);
+            const maxDist = 120;
+            const delay = (Math.min(dist, maxDist) / maxDist) * 3500;
+            return (
+              <Building
+                key={b.profile.id || i}
+                params={b}
+                onClick={handleBuildingDoubleClick}
+                constructionDelay={delay}
+                constructionElapsedRef={revealTime !== null ? constructionElapsedRef : undefined}
+                cameraPosition={cameraPosRef}
+              />
+            );
+          })
+        )}
+
+        {!isInstanced && <FloatingLabels buildings={buildings} visible={cameraMode === 'orbit' && introComplete} />}
+        {!isInstanced && <DistrictLabels visible={cameraMode === 'orbit' && introComplete} />}
 
         {!introComplete && <CinematicIntro onComplete={handleIntroComplete} />}
 
         {/* Camera controls: orbit or explore */}
         {cameraMode === 'orbit' && (
-          <SmartOrbitControls enabled={introComplete} orbitRef={orbitRef} />
+          <SmartOrbitControls enabled={introComplete} orbitRef={orbitRef} maxDistance={isInstanced ? 1200 : 300} />
         )}
         {cameraMode === 'explore' && introComplete && (
           <ExploreCamera

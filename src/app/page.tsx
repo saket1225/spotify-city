@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import { useSession, signIn } from 'next-auth/react';
 import { getSampleBuildings } from '@/lib/sampleData';
 import { generateBuildingParams } from '@/lib/buildingGenerator';
-import { BuildingParams, SpotifyProfile } from '@/types';
+import { generateMillionCity } from '@/lib/cityData';
+import { BuildingParams, SpotifyProfile, CityData } from '@/types';
 import ProfileCard from '@/components/ProfileCard';
 import ShareCard from '@/components/ShareCard';
 import CityStats from '@/components/CityStats';
@@ -40,20 +41,36 @@ function fireConfetti() {
 }
 
 /* ── Bottom stats bar ── */
-function StatsBar({ buildings }: { buildings: BuildingParams[] }) {
+function StatsBar({ buildings, cityData }: { buildings?: BuildingParams[]; cityData?: CityData }) {
   const stats = useMemo(() => {
-    const totalHours = buildings.reduce((sum, b) => sum + (b.profile.estimatedListeningHours || 0), 0);
-    let tallest = buildings[0];
-    for (const b of buildings) {
-      if ((b.profile.estimatedListeningHours || 0) > (tallest?.profile.estimatedListeningHours || 0)) tallest = b;
+    if (cityData) {
+      let totalHours = 0;
+      let tallestIdx = 0;
+      let tallestH = 0;
+      for (let i = 0; i < cityData.count; i++) {
+        totalHours += cityData.hours[i];
+        if (cityData.hours[i] > tallestH) { tallestH = cityData.hours[i]; tallestIdx = i; }
+      }
+      return {
+        listeners: cityData.count.toLocaleString(),
+        hours: totalHours.toLocaleString(),
+        tallestName: cityData.names[tallestIdx],
+        tallestHours: tallestH.toLocaleString(),
+      };
+    }
+    const b = buildings || [];
+    const totalHours = b.reduce((sum, x) => sum + (x.profile.estimatedListeningHours || 0), 0);
+    let tallest = b[0];
+    for (const x of b) {
+      if ((x.profile.estimatedListeningHours || 0) > (tallest?.profile.estimatedListeningHours || 0)) tallest = x;
     }
     return {
-      listeners: buildings.length.toLocaleString(),
+      listeners: b.length.toLocaleString(),
       hours: totalHours.toLocaleString(),
       tallestName: tallest?.profile.displayName || tallest?.profile.topArtists?.[0]?.name || 'Unknown',
       tallestHours: (tallest?.profile.estimatedListeningHours || 0).toLocaleString(),
     };
-  }, [buildings]);
+  }, [buildings, cityData]);
 
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-10">
@@ -77,8 +94,8 @@ function MetricsLegend() {
 /* ── Storytelling loading phases ── */
 const LOADING_PHASES = [
   'Scanning your library...',
-  'Mapping 1,200 genres...',
-  'Building 1,200 skylines...',
+  'Mapping 1,000,000 genres...',
+  'Building 1,000,000 skylines...',
   'Welcome to your city',
 ];
 
@@ -311,6 +328,47 @@ export default function Home() {
     return [userBuilding, ...reindexed];
   }, [userProfile, sampleBuildings]);
 
+  // Demo mode: generate 1M city when not authenticated
+  const isDemo = status !== 'authenticated';
+  const cityData = useMemo(() => isDemo ? generateMillionCity(1000000) : undefined, [isDemo]);
+
+  const GENRE_NAMES = ['Pop', 'Rock', 'Hip-Hop', 'Electronic', 'Indie', 'Classical'];
+
+  const handleInstancedBuildingClick = useCallback((index: number) => {
+    if (!cityData) return;
+    const genre = GENRE_NAMES[cityData.genreIndices[index]];
+    const r = Math.round(cityData.colors[index * 3] * 255);
+    const g = Math.round(cityData.colors[index * 3 + 1] * 255);
+    const b = Math.round(cityData.colors[index * 3 + 2] * 255);
+    const colorStr = `rgb(${r},${g},${b})`;
+    const fakeBuilding: BuildingParams = {
+      position: [cityData.positions[index * 3], 0, cityData.positions[index * 3 + 2]],
+      width: cityData.scales[index * 3],
+      depth: cityData.scales[index * 3 + 2],
+      height: cityData.scales[index * 3 + 1],
+      primaryColor: colorStr,
+      secondaryColor: colorStr,
+      accentColor: '#1DB954',
+      windowGlow: 0.5,
+      style: 'modern',
+      profile: {
+        id: `demo-${index}`,
+        displayName: cityData.names[index],
+        imageUrl: '',
+        estimatedListeningHours: cityData.hours[index],
+        totalTracksPlayed: Math.round(cityData.hours[index] * 15),
+        avgTrackDuration: 3.5,
+        listeningStreak: 0,
+        playlistDuration: 0,
+        totalPlaylists: 0,
+        topGenres: [genre],
+        topArtists: [{ name: genre + ' Artist', imageUrl: '', genres: [genre] }],
+        topTracks: [{ name: genre + ' Track', artist: genre + ' Artist', albumArt: '' }],
+      },
+    };
+    setSelectedBuilding(fakeBuilding);
+  }, [cityData]);
+
   const handleBuildingClick = (building: BuildingParams) => {
     setSelectedBuilding(building);
   };
@@ -456,13 +514,15 @@ export default function Home() {
           focusPosition={focusPosition}
           hideControls={heroVisible || loading || screenshotMode}
           revealTime={cityRevealTime}
+          cityData={cityData}
+          onInstancedBuildingClick={handleInstancedBuildingClick}
         />
       </main>
 
       {/* Bottom center stats bar + metrics legend */}
       {!heroVisible && !loading && !screenshotMode && (
         <>
-          <StatsBar buildings={allBuildings} />
+          <StatsBar buildings={!cityData ? allBuildings : undefined} cityData={cityData} />
           <MetricsLegend />
         </>
       )}

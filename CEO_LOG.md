@@ -163,8 +163,12 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Dashed glowing green roads connecting all district pairs (Pop hub to all 5, plus Rock-Classical and Electronic-Indie). Small flat box meshes creating dashed line effect at 10% opacity.
 **Result:** Shipped. City feels connected and intentional. Roads are subtle but visible.
 
+## Decision #33 - Loading Experience (Mar 21, 2026)
+**Problem:** Transition from hero to city was jarring with 1200 buildings.
+**Decision:** Added thin green progress bar filling during loader. Updated text to reference "1,200" count. 500ms black gap after loader before city fade-in. Canvas fades from opacity 0→1 over 800ms.
+**Result:** Shipped. Smooth, cinematic transition into the city.
+
 ---
 
 ## Backlog (prioritized)
 1. City comparison view (side-by-side)
-2. Loading/skeleton state improvements
