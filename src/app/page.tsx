@@ -77,8 +77,8 @@ function MetricsLegend() {
 /* ── Storytelling loading phases ── */
 const LOADING_PHASES = [
   'Scanning your library...',
-  'Mapping your genres...',
-  'Building your skyline...',
+  'Mapping 1,200 genres...',
+  'Building 1,200 skylines...',
   'Welcome to your city',
 ];
 
@@ -87,12 +87,27 @@ function SkylineLoader({ stats }: { stats: string | null }) {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
+  const [progressPct, setProgressPct] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setProgress((p) => Math.min(p + 0.02, 1));
     }, 30);
     return () => clearInterval(timer);
+  }, []);
+
+  // Fake progress bar: 0-100% over ~4s with easing
+  useEffect(() => {
+    const start = Date.now();
+    const duration = 4000;
+    const tick = () => {
+      const elapsed = Date.now() - start;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 2);
+      setProgressPct(Math.round(eased * 100));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
   }, []);
 
   useEffect(() => {
@@ -159,6 +174,13 @@ function SkylineLoader({ stats }: { stats: string | null }) {
         {stats && phase < 3 && (
           <p className="text-sm text-gray-500 animate-pulse">{stats}</p>
         )}
+      </div>
+      {/* Progress bar */}
+      <div className="fixed bottom-0 left-0 right-0 h-[2px] bg-white/5">
+        <div
+          className="h-full bg-[#1DB954]"
+          style={{ width: `${progressPct}%`, transition: 'width 0.1s linear' }}
+        />
       </div>
     </div>
   );
@@ -254,6 +276,7 @@ export default function Home() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [cityRevealTime, setCityRevealTime] = useState<number | null>(null);
   const constructionDoneRef = useRef(false);
+  const [cityFadeIn, setCityFadeIn] = useState(false);
 
   // Fetch real Spotify data when signed in
   useEffect(() => {
@@ -303,7 +326,11 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-      fireConfetti();
+      // 500ms black gap, then fade in city over 800ms
+      setTimeout(() => {
+        setCityFadeIn(true);
+        fireConfetti();
+      }, 500);
     }, 4800);
     return () => clearTimeout(timer);
   }, []);
@@ -312,6 +339,7 @@ export default function Home() {
   useEffect(() => {
     if (status === 'authenticated') {
       setHeroVisible(false);
+      setCityFadeIn(true);
       if (!constructionDoneRef.current) { setCityRevealTime(performance.now()); constructionDoneRef.current = true; }
     }
   }, [status]);
@@ -387,7 +415,7 @@ export default function Home() {
 
       {/* Hero Overlay */}
       {!loading && heroVisible && (
-        <HeroOverlay onExploreDemo={() => { setHeroVisible(false); if (!constructionDoneRef.current) { setCityRevealTime(performance.now()); constructionDoneRef.current = true; } setCityLoading(true); setTimeout(() => setCityLoading(false), 3000); }} />
+        <HeroOverlay onExploreDemo={() => { setHeroVisible(false); if (!constructionDoneRef.current) { setCityRevealTime(performance.now()); constructionDoneRef.current = true; } setCityLoading(true); setCityFadeIn(true); setTimeout(() => setCityLoading(false), 3000); }} />
       )}
 
       {/* City loading indicator */}
@@ -421,7 +449,7 @@ export default function Home() {
       )}
 
       {/* 3D City - full viewport */}
-      <main className="fixed inset-0">
+      <main className="fixed inset-0" style={{ opacity: cityFadeIn || heroVisible ? 1 : 0, transition: 'opacity 0.8s ease-in' }}>
         <City
           buildings={allBuildings}
           onBuildingClick={handleBuildingClick}

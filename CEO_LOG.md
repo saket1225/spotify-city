@@ -158,9 +158,13 @@ Saket's direction: better branding, better display, gitcity-level simplicity for
 **Decision:** Buildings >150 units from camera switch to a simple colored box mesh. Camera position tracked every 10 frames (no re-renders). Close buildings render full detail. Seamless transition.
 **Result:** Shipped. Significant GPU savings for distant buildings.
 
+## Decision #32 - Road Network (Mar 21, 2026)
+**Problem:** Districts felt disconnected - 6 isolated clusters with empty space between.
+**Decision:** Dashed glowing green roads connecting all district pairs (Pop hub to all 5, plus Rock-Classical and Electronic-Indie). Small flat box meshes creating dashed line effect at 10% opacity.
+**Result:** Shipped. City feels connected and intentional. Roads are subtle but visible.
+
 ---
 
 ## Backlog (prioritized)
 1. City comparison view (side-by-side)
 2. Loading/skeleton state improvements
-3. Road/path network between districts
